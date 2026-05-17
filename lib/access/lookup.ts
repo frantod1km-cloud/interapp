@@ -19,6 +19,7 @@ export type LookupResult =
       authorizationId?: string;
       vehicles?: VehicleHint[]; // patentes asociadas
       residentKind?: string;    // owner | tenant | family | staff | domestic | contractor
+      pendingPackages?: number; // paquetes esperando que retire
     }
   | {
       state: "expired";
@@ -67,7 +68,7 @@ export async function lookupDni(
     .maybeSingle();
 
   if (resident) {
-    const [{ data: vehicles }, { data: rule }] = await Promise.all([
+    const [{ data: vehicles }, { data: rule }, { count: pendingPackages }] = await Promise.all([
       supabase
         .from("vehicles")
         .select("plate, make, model, color")
@@ -79,6 +80,12 @@ export async function lookupDni(
         .eq("organization_id", organizationId)
         .eq("kind", resident.kind)
         .maybeSingle(),
+      supabase
+        .from("packages")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("resident_id", resident.id)
+        .eq("status", "pending"),
     ]);
 
     const fullName = `${resident.first_name} ${resident.last_name}`;
@@ -105,6 +112,7 @@ export async function lookupDni(
       residentId: resident.id,
       vehicles: vehicles ?? [],
       residentKind: resident.kind,
+      pendingPackages: pendingPackages ?? 0,
     };
   }
 

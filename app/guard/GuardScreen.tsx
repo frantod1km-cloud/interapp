@@ -392,6 +392,9 @@ export default function GuardScreen({
               Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
+          <a href="/guard/package" className="text-xs opacity-60 hover:opacity-100">
+            📦 Paquetes
+          </a>
           {isLead && (
             <a href="/guard/supervision" className="text-xs opacity-60 hover:opacity-100">
               Supervisión
@@ -499,6 +502,17 @@ function ResultView({
             ))}
           </div>
         )}
+        {result.pendingPackages && result.pendingPackages > 0 ? (
+          <div className="bg-sky-600 rounded-xl px-4 py-3 mb-4 inline-flex items-center gap-3 text-left text-white font-bold">
+            <span className="text-2xl">📦</span>
+            <span>
+              Tiene {result.pendingPackages} paquete{result.pendingPackages > 1 ? "s" : ""} esperando.{" "}
+              <a href="/guard/package" className="underline opacity-90 hover:opacity-100">
+                Ir a entregar
+              </a>
+            </span>
+          </div>
+        ) : null}
         {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
         <div>
           <button

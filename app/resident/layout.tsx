@@ -26,6 +26,7 @@ export default async function ResidentLayout({ children }: { children: React.Rea
         <div className="font-bold text-sm sm:text-base">{org.name}</div>
         <nav className="flex gap-3 text-sm text-zinc-400 items-center">
           <Link href="/resident" className="hover:text-white">Visitas</Link>
+          <Link href="/resident/packages" className="hover:text-white">📦 Paquetes</Link>
           <Link href="/resident/history" className="hover:text-white">Historial</Link>
           <form action="/api/logout" method="post">
             <button className="text-zinc-500 hover:text-white">Salir</button>
