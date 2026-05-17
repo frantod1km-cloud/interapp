@@ -109,12 +109,13 @@ export async function createOrgAction(formData: FormData) {
     status: planId === "trial" ? "trial" : "pending",
   });
 
-  // 6. Si es plan pago: crear preapproval en MP y redirigir
+  // Si es plan pago: crear preapproval en MP y redirigir
   if (plan.priceArs > 0) {
     const h = await headers();
     const host = h.get("host") ?? "localhost:3000";
     const { proto, root } = baseDomain(host);
-    const backUrl = `${proto}://${slug}.${root}/admin?welcome=1`;
+    // Vuelta de MP → /login con bandera de bienvenida en el subdominio del barrio
+    const backUrl = `${proto}://${slug}.${root}/login?welcome=1`;
 
     try {
       const pre = await createPreapproval({
@@ -131,14 +132,15 @@ export async function createOrgAction(formData: FormData) {
 
       redirect(pre.init_point);
     } catch (e) {
-      // No tiramos al usuario si MP falla — queda creado, banner avisa que falta pagar
       console.error("MP preapproval error:", e);
     }
   }
 
-  // Plan trial o fallback: redirigir directo al panel del nuevo barrio
+  // Plan trial o fallback: redirigir al login del subdominio.
+  // No podemos auto-loguear porque la sesión que se cree acá quedaría en
+  // el dominio raíz y no se compartiría con el subdominio.
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   const { proto, root } = baseDomain(host);
-  redirect(`${proto}://${slug}.${root}/admin?welcome=1`);
+  redirect(`${proto}://${slug}.${root}/login?welcome=1`);
 }
