@@ -20,7 +20,7 @@ export async function GET() {
 
   const supabase = await createClient();
 
-  const [residentsResp, authsResp] = await Promise.all([
+  const [residentsResp, authsResp, vehiclesResp] = await Promise.all([
     supabase
       .from("residents")
       .select("id, dni, first_name, last_name, unit")
@@ -33,6 +33,10 @@ export async function GET() {
       .eq("revoked", false)
       .not("dni", "is", null)
       .gte("valid_until", new Date().toISOString()),
+    supabase
+      .from("vehicles")
+      .select("plate, make, model, color, resident_id")
+      .eq("organization_id", org.id),
   ]);
 
   type AuthRow = {
@@ -59,6 +63,7 @@ export async function GET() {
         valid_until: a.valid_until,
       };
     }),
+    vehicles: vehiclesResp.data ?? [],
   };
 
   return NextResponse.json(snap);

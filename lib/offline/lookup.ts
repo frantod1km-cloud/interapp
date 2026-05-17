@@ -7,6 +7,9 @@ import type { Snapshot } from "./db";
 export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
   const resident = snap.residents.find((r) => r.dni === dni);
   if (resident) {
+    const vehicles = snap.vehicles
+      .filter((v) => v.resident_id === resident.id)
+      .map((v) => ({ plate: v.plate, make: v.make, model: v.model, color: v.color }));
     return {
       state: "authorized",
       kind: "resident",
@@ -14,6 +17,7 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
       fullName: `${resident.first_name} ${resident.last_name}`,
       detail: resident.unit ? `Residente — ${resident.unit}` : "Residente",
       residentId: resident.id,
+      vehicles,
     };
   }
 

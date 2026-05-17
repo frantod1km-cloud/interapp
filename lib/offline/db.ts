@@ -27,11 +27,20 @@ export type SnapshotAuthorization = {
   valid_until: string; // ISO
 };
 
+export type SnapshotVehicle = {
+  plate: string;
+  make: string | null;
+  model: string | null;
+  color: string | null;
+  resident_id: string;
+};
+
 export type Snapshot = {
   fetched_at: string;
   organization_id: string;
   residents: SnapshotResident[];
   authorizations: SnapshotAuthorization[];
+  vehicles: SnapshotVehicle[];
 };
 
 export type QueuedEvent = {

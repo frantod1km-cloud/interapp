@@ -37,6 +37,7 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
   const [online, setOnline] = useState(true);
   const [queueSize, setQueueSize] = useState(0);
   const [snapshotAge, setSnapshotAge] = useState<string | null>(null);
+  const [direction, setDirection] = useState<"in" | "out">("in");
 
   // --- focus permanente ---
   const refocus = useCallback(() => {
@@ -219,7 +220,7 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
       client_id: uuid(),
       dni: r.dni,
       full_name: fullName ?? null,
-      direction: "in",
+      direction,
       result: opts.result,
       reason: opts.reason ?? null,
       authorization_id:
@@ -240,9 +241,12 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
     }
 
     const time = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const verb = direction === "in" ? "Entrada" : "Salida";
     setScreen({
       kind: "confirmed",
-      message: navigator.onLine ? `Ingreso registrado · ${time}` : `Guardado (offline) · ${time}`,
+      message: navigator.onLine
+        ? `${verb} registrada · ${time}`
+        : `${verb} guardada (offline) · ${time}`,
     });
     setBusy(false);
   };
@@ -274,9 +278,32 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
         aria-label="Escaneá el DNI"
       />
 
-      <header className="flex items-center justify-between px-6 py-3 bg-black/30 text-sm">
+      <header className="flex items-center justify-between px-6 py-3 bg-black/30 text-sm gap-3 flex-wrap">
         <div className="font-semibold">{orgName}</div>
-        <div className="flex items-center gap-3 opacity-80">
+
+        {/* Toggle dirección — el guardia lo cambia para registrar entradas vs salidas */}
+        <div className="flex bg-black/40 rounded-lg p-0.5">
+          <button
+            type="button"
+            onClick={() => setDirection("in")}
+            className={`px-3 py-1 rounded text-xs font-bold transition ${
+              direction === "in" ? "bg-emerald-500 text-black" : "opacity-60 hover:opacity-100"
+            }`}
+          >
+            ↘ ENTRADA
+          </button>
+          <button
+            type="button"
+            onClick={() => setDirection("out")}
+            className={`px-3 py-1 rounded text-xs font-bold transition ${
+              direction === "out" ? "bg-sky-500 text-black" : "opacity-60 hover:opacity-100"
+            }`}
+          >
+            ↗ SALIDA
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 opacity-80 ml-auto">
           {!online && <span className="bg-amber-500 text-black px-2 py-0.5 rounded text-xs font-bold">SIN CONEXIÓN</span>}
           {queueSize > 0 && (
             <span className="bg-zinc-800 px-2 py-0.5 rounded text-xs">
@@ -302,6 +329,7 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
             result={screen.result}
             scannedName={screen.scannedName}
             offline={screen.offline}
+            direction={direction}
             onRegister={register}
             busy={busy}
           />
@@ -345,33 +373,54 @@ function ResultView({
   result,
   scannedName,
   offline,
+  direction,
   onRegister,
   busy,
 }: {
   result: LookupResult;
   scannedName?: string;
   offline: boolean;
+  direction: "in" | "out";
   onRegister: (opts: { result: "authorized" | "forced" | "manual"; reason?: string }) => void;
   busy: boolean;
 }) {
   const dniDisplay = formatDni(result.dni);
+  const actionLabel = direction === "in" ? "Registrar entrada" : "Registrar salida";
 
   if (result.state === "authorized") {
+    const vehicles = result.vehicles ?? [];
     return (
       <div className="max-w-2xl">
         <div className="text-8xl mb-4">✅</div>
         <h1 className="text-5xl font-bold mb-2">AUTORIZADO</h1>
         <p className="text-3xl font-semibold mb-1">{result.fullName}</p>
         <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
-        <p className="text-lg opacity-80 mb-6">{result.detail}</p>
+        <p className="text-lg opacity-80 mb-3">{result.detail}</p>
+        {vehicles.length > 0 && (
+          <div className="bg-black/30 rounded-xl px-4 py-3 mb-4 inline-block text-left">
+            <div className="text-xs uppercase tracking-wider opacity-70 mb-1">Vehículos</div>
+            {vehicles.map((v) => (
+              <div key={v.plate} className="font-mono font-bold text-lg">
+                {v.plate}
+                {(v.make || v.model || v.color) && (
+                  <span className="font-sans font-normal text-sm opacity-80 ml-2">
+                    {[v.make, v.model, v.color].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
-        <button
-          onClick={() => onRegister({ result: "authorized" })}
-          disabled={busy}
-          className="bg-white text-emerald-700 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
-        >
-          {busy ? "Registrando…" : "Registrar ingreso"}
-        </button>
+        <div>
+          <button
+            onClick={() => onRegister({ result: "authorized" })}
+            disabled={busy}
+            className="bg-white text-emerald-700 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
+          >
+            {busy ? "Registrando…" : actionLabel}
+          </button>
+        </div>
       </div>
     );
   }
@@ -395,7 +444,7 @@ function ResultView({
           disabled={busy}
           className="bg-white text-amber-700 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
-          Forzar ingreso
+          Forzar {direction === "in" ? "entrada" : "salida"}
         </button>
         <button
           onClick={() => onRegister({ result: "manual", reason: "Rechazado" })}

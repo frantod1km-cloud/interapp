@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 
+export type VehicleHint = {
+  plate: string;
+  make?: string | null;
+  model?: string | null;
+  color?: string | null;
+};
+
 export type LookupResult =
   | {
       state: "authorized";
@@ -9,6 +16,7 @@ export type LookupResult =
       detail: string; // ej: "Lote 42" o "Invitado de Juan Pérez"
       residentId?: string;
       authorizationId?: string;
+      vehicles?: VehicleHint[]; // patentes asociadas
     }
   | {
       state: "expired";
@@ -48,6 +56,12 @@ export async function lookupDni(
     .maybeSingle();
 
   if (resident) {
+    const { data: vehicles } = await supabase
+      .from("vehicles")
+      .select("plate, make, model, color")
+      .eq("organization_id", organizationId)
+      .eq("resident_id", resident.id);
+
     return {
       state: "authorized",
       kind: "resident",
@@ -55,6 +69,7 @@ export async function lookupDni(
       fullName: `${resident.first_name} ${resident.last_name}`,
       detail: resident.unit ? `Residente — ${resident.unit}` : "Residente",
       residentId: resident.id,
+      vehicles: vehicles ?? [],
     };
   }
 
