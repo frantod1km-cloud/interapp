@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
+import Landing from "@/components/landing/Landing";
 
 export const dynamic = "force-dynamic";
 
@@ -57,27 +58,5 @@ export default async function Home() {
   }
 
   // --- No hay subdominio: landing pública de interapp ---
-  return (
-    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-8">
-      <div className="text-center max-w-xl">
-        <h1 className="text-5xl font-bold mb-4">interapp</h1>
-        <p className="text-xl text-zinc-400 mb-8">
-          Control de accesos para barrios, countries, edificios y parques industriales.
-          Rápido, simple, confiable.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/signup"
-            className="bg-white text-zinc-950 hover:bg-zinc-200 font-semibold px-6 py-3 rounded-xl"
-          >
-            Crear mi barrio
-          </Link>
-        </div>
-        <p className="text-zinc-600 text-sm mt-8">
-          ¿Ya tenés un barrio creado? Accedé desde tu subdominio, ej:{" "}
-          <code className="bg-zinc-900 px-2 py-1 rounded">losalamos.interapp.com</code>
-        </p>
-      </div>
-    </main>
-  );
+  return <Landing />;
 }
