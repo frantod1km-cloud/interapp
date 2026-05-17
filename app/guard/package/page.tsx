@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
 import { kindMeta } from "@/lib/resident-kinds";
+import { packageAge } from "@/lib/packages/age";
 import PackageForm from "./PackageForm";
-import { deliverPackageAction } from "@/app/admin/packages/actions";
+import DeliverButton from "./DeliverButton";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function GuardPackagePage({
       .eq("active", true),
     supabase
       .from("packages")
-      .select("id, description, courier, received_at, photo_url, residents(first_name, last_name, unit, dni, kind)")
+      .select("id, description, courier, received_at, photo_url, pickup_pin, pickup_pin_holder, residents(first_name, last_name, unit, dni, kind)")
       .eq("organization_id", org.id)
       .eq("status", "pending")
       .order("received_at", { ascending: false })
@@ -113,6 +114,7 @@ export default async function GuardPackagePage({
               {pendingResp.data!.map((p) => {
                 const r = Array.isArray(p.residents) ? p.residents[0] : p.residents;
                 const km = r ? kindMeta(r.kind) : null;
+                const age = packageAge(p.received_at);
                 return (
                   <div key={p.id} className="p-4 flex gap-4 items-start">
                     {p.photo_url ? (
@@ -128,7 +130,17 @@ export default async function GuardPackagePage({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium">{p.description}</div>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-medium">{p.description}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${age.className}`}>
+                          {age.label}
+                        </span>
+                        {p.pickup_pin && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            🔑 PIN activo
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-zinc-400">
                         {p.courier && <>{p.courier} · </>}
                         {new Date(p.received_at).toLocaleString("es-AR", {
@@ -149,13 +161,14 @@ export default async function GuardPackagePage({
                         </div>
                       )}
                     </div>
-                    <form action={deliverPackageAction} className="flex-shrink-0">
-                      <input type="hidden" name="package_id" value={p.id} />
-                      <input type="hidden" name="delivered_to" value={r ? `${r.first_name} ${r.last_name}` : "Retirado"} />
-                      <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold text-sm px-4 py-2 rounded-lg">
-                        Entregar
-                      </button>
-                    </form>
+                    <div className="flex-shrink-0">
+                      <DeliverButton
+                        packageId={p.id}
+                        hasPin={Boolean(p.pickup_pin)}
+                        pinHolder={p.pickup_pin_holder}
+                        defaultDeliveredTo={r ? `${r.first_name} ${r.last_name}` : "Retirado"}
+                      />
+                    </div>
                   </div>
                 );
               })}

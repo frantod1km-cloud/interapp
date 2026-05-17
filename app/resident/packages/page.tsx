@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { packageAge } from "@/lib/packages/age";
 import { residentMarkDeliveredAction } from "@/app/admin/packages/actions";
+import PinButton from "./PinButton";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +32,9 @@ export default async function ResidentPackagesPage() {
 
   const { data: pkgs } = await supabase
     .from("packages")
-    .select("id, description, courier, photo_url, status, received_at, delivered_at, delivered_to, gate_label")
+    .select(
+      "id, description, courier, photo_url, status, received_at, delivered_at, delivered_to, gate_label, pickup_pin, pickup_pin_holder",
+    )
     .eq("organization_id", org.id)
     .eq("resident_id", resident.id)
     .order("received_at", { ascending: false })
@@ -55,44 +59,63 @@ export default async function ResidentPackagesPage() {
           <p className="text-zinc-500 text-sm">No tenés paquetes esperando.</p>
         ) : (
           <div className="space-y-3">
-            {pending.map((p) => (
-              <div
-                key={p.id}
-                className="bg-zinc-900 border border-sky-600/40 rounded-2xl p-4 flex gap-3 items-start"
-              >
-                {p.photo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.photo_url}
-                    alt=""
-                    className="w-20 h-20 rounded-lg object-cover bg-zinc-800 flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-lg bg-zinc-800 flex items-center justify-center text-3xl flex-shrink-0">
-                    📦
+            {pending.map((p) => {
+              const age = packageAge(p.received_at);
+              return (
+                <div
+                  key={p.id}
+                  className="bg-zinc-900 border border-sky-600/40 rounded-2xl p-4"
+                >
+                  <div className="flex gap-3 items-start">
+                    {p.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.photo_url}
+                        alt=""
+                        className="w-20 h-20 rounded-lg object-cover bg-zinc-800 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-zinc-800 flex items-center justify-center text-3xl flex-shrink-0">
+                        📦
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-medium">{p.description}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${age.className}`}>
+                          {age.label}
+                        </span>
+                      </div>
+                      <div className="text-sm text-zinc-400">
+                        {p.courier && <>{p.courier} · </>}
+                        {new Date(p.received_at).toLocaleString("es-AR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {p.gate_label && ` · ${p.gate_label}`}
+                      </div>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <form action={residentMarkDeliveredAction}>
+                          <input type="hidden" name="package_id" value={p.id} />
+                          <button className="text-xs bg-emerald-700/30 hover:bg-emerald-600 text-emerald-200 px-3 py-1 rounded">
+                            Ya lo retiré
+                          </button>
+                        </form>
+                        <PinButton
+                          packageId={p.id}
+                          description={p.description}
+                          orgName={org.name}
+                          existingPin={p.pickup_pin}
+                          holderName={p.pickup_pin_holder}
+                        />
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium">{p.description}</div>
-                  <div className="text-sm text-zinc-400">
-                    {p.courier && <>{p.courier} · </>}
-                    {new Date(p.received_at).toLocaleString("es-AR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                    {p.gate_label && ` · ${p.gate_label}`}
-                  </div>
-                  <form action={residentMarkDeliveredAction} className="mt-2">
-                    <input type="hidden" name="package_id" value={p.id} />
-                    <button className="text-xs bg-emerald-700/30 hover:bg-emerald-600 text-emerald-200 px-3 py-1 rounded">
-                      Ya lo retiré
-                    </button>
-                  </form>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

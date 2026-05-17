@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
 import { kindMeta } from "@/lib/resident-kinds";
-import { deliverPackageAction, returnPackageAction } from "./actions";
+import { packageAge } from "@/lib/packages/age";
+import { returnPackageAction } from "./actions";
+import DeliverButton from "@/app/guard/package/DeliverButton";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +32,7 @@ export default async function AdminPackagesPage({
   let query = supabase
     .from("packages")
     .select(
-      "id, description, courier, photo_url, status, received_at, delivered_at, delivered_to, gate_label, residents(first_name, last_name, dni, unit, kind)",
+      "id, description, courier, photo_url, status, received_at, delivered_at, delivered_to, gate_label, pickup_pin, pickup_pin_holder, residents(first_name, last_name, dni, unit, kind)",
     )
     .eq("organization_id", org.id)
     .order("received_at", { ascending: false })
@@ -109,6 +111,16 @@ export default async function AdminPackagesPage({
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-bold">{p.description}</span>
                     <StatusBadge status={p.status} />
+                    {p.status === "pending" && (
+                      <span className={`text-xs px-2 py-0.5 rounded ${packageAge(p.received_at).className}`}>
+                        {packageAge(p.received_at).label}
+                      </span>
+                    )}
+                    {p.pickup_pin && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        🔑 PIN activo
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-zinc-400">
                     {p.courier && <>{p.courier} · </>}
@@ -145,17 +157,12 @@ export default async function AdminPackagesPage({
                 </div>
                 {p.status === "pending" && (
                   <div className="flex flex-col gap-2 flex-shrink-0">
-                    <form action={deliverPackageAction}>
-                      <input type="hidden" name="package_id" value={p.id} />
-                      <input
-                        type="hidden"
-                        name="delivered_to"
-                        value={r ? `${r.first_name} ${r.last_name}` : ""}
-                      />
-                      <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs px-3 py-1.5 rounded-lg w-full">
-                        Entregar
-                      </button>
-                    </form>
+                    <DeliverButton
+                      packageId={p.id}
+                      hasPin={Boolean(p.pickup_pin)}
+                      pinHolder={p.pickup_pin_holder}
+                      defaultDeliveredTo={r ? `${r.first_name} ${r.last_name}` : ""}
+                    />
                     <form action={returnPackageAction}>
                       <input type="hidden" name="package_id" value={p.id} />
                       <button className="bg-zinc-800 hover:bg-amber-700 text-xs px-3 py-1.5 rounded-lg w-full">

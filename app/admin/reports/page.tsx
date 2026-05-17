@@ -107,12 +107,69 @@ export default async function ReportsPage() {
   const dailySeries = [...byDay.entries()];
   const maxDaily = Math.max(1, ...dailySeries.map(([, c]) => c));
 
+  // ============================================================================
+  // Paquetería (últimos 30 días)
+  // ============================================================================
+  const { data: pkgs30 } = await supabase
+    .from("packages")
+    .select("courier, status, received_at, delivered_at, resident_id")
+    .eq("organization_id", org.id)
+    .gte("received_at", since.toISOString());
+
+  const packages = pkgs30 ?? [];
+
+  // Por estado
+  const pkgByStatus: Record<string, number> = { pending: 0, delivered: 0, returned: 0 };
+  for (const p of packages) pkgByStatus[p.status] = (pkgByStatus[p.status] ?? 0) + 1;
+
+  // Por courier
+  const pkgByCourier: Record<string, number> = {};
+  for (const p of packages) {
+    const c = p.courier ?? "(sin especificar)";
+    pkgByCourier[c] = (pkgByCourier[c] ?? 0) + 1;
+  }
+  const couriersSorted = Object.entries(pkgByCourier).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxCourier = Math.max(1, ...couriersSorted.map(([, c]) => c));
+
+  // Top residentes
+  const pkgByResident = new Map<string, number>();
+  for (const p of packages) {
+    if (!p.resident_id) continue;
+    pkgByResident.set(p.resident_id, (pkgByResident.get(p.resident_id) ?? 0) + 1);
+  }
+  const topPkgResidentIds = [...pkgByResident.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const pkgResidentDetails = new Map<string, { name: string; unit: string | null }>();
+  if (topPkgResidentIds.length > 0) {
+    const { data: residents } = await supabase
+      .from("residents")
+      .select("id, first_name, last_name, unit")
+      .in("id", topPkgResidentIds.map(([id]) => id));
+    for (const r of residents ?? []) {
+      pkgResidentDetails.set(r.id, {
+        name: `${r.last_name}, ${r.first_name}`,
+        unit: r.unit,
+      });
+    }
+  }
+  const maxTopPkgResident = Math.max(1, ...topPkgResidentIds.map(([, c]) => c));
+
+  // Tiempo promedio en garita (delivered): horas
+  let avgHours = 0;
+  const delivered = packages.filter((p) => p.status === "delivered" && p.delivered_at);
+  if (delivered.length > 0) {
+    const total = delivered.reduce((sum, p) => {
+      const ms = new Date(p.delivered_at!).getTime() - new Date(p.received_at).getTime();
+      return sum + ms;
+    }, 0);
+    avgHours = total / delivered.length / (1000 * 60 * 60);
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold mb-1">Reportes</h1>
         <p className="text-zinc-400 text-sm">
-          Últimos 30 días · {events.length} eventos totales
+          Últimos 30 días · {events.length} eventos · {packages.length} paquetes
         </p>
       </div>
 
@@ -222,8 +279,90 @@ export default async function ReportsPage() {
           </div>
         )}
       </Card>
+
+      {/* ===== Paquetería ===== */}
+      <div className="pt-6 border-t border-zinc-800">
+        <h2 className="text-xl font-bold mb-4">📦 Paquetería (30 días)</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-sky-900/20 border border-sky-700/40 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Pendientes ahora</div>
+            <div className="text-3xl font-bold">{pkgByStatus.pending ?? 0}</div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Entregados</div>
+            <div className="text-3xl font-bold text-emerald-400">{pkgByStatus.delivered ?? 0}</div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Devueltos</div>
+            <div className="text-3xl font-bold text-amber-400">{pkgByStatus.returned ?? 0}</div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Promedio en garita</div>
+            <div className="text-3xl font-bold">
+              {avgHours > 0 ? formatHours(avgHours) : "—"}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card title="Top mensajerías">
+            {couriersSorted.length === 0 ? (
+              <p className="text-zinc-500 text-sm">Sin paquetes en este período.</p>
+            ) : (
+              <div className="space-y-2">
+                {couriersSorted.map(([name, c]) => (
+                  <div key={name} className="flex items-center gap-3 text-sm">
+                    <div className="w-32 text-zinc-300 truncate">{name}</div>
+                    <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
+                      <div
+                        className="h-full bg-sky-500"
+                        style={{ width: `${(c / maxCourier) * 100}%` }}
+                      />
+                    </div>
+                    <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title="Top residentes con más paquetes">
+            {topPkgResidentIds.length === 0 ? (
+              <p className="text-zinc-500 text-sm">Sin paquetes en este período.</p>
+            ) : (
+              <div className="space-y-2">
+                {topPkgResidentIds.map(([id, c]) => {
+                  const r = pkgResidentDetails.get(id);
+                  return (
+                    <div key={id} className="flex items-center gap-3 text-sm">
+                      <div className="w-48 truncate">
+                        {r?.name ?? "—"}
+                        {r?.unit && <span className="text-zinc-500 text-xs"> · {r.unit}</span>}
+                      </div>
+                      <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500"
+                          style={{ width: `${(c / maxTopPkgResident) * 100}%` }}
+                        />
+                      </div>
+                      <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
     </div>
   );
+}
+
+function formatHours(h: number): string {
+  if (h < 1) return `${Math.round(h * 60)} min`;
+  if (h < 48) return `${h.toFixed(1)} h`;
+  return `${(h / 24).toFixed(1)} días`;
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
