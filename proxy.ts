@@ -1,14 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// Middleware:
-// 1. Refresca la sesión de Supabase en cada request (mantiene cookies vivas).
-// 2. Resuelve el subdominio → organization slug y lo pasa por header `x-org-slug`.
-//    Ej: losalamos.interapp.com → slug = "losalamos"
-//    En localhost (sin subdominio), permite pasar y la app cae al onboarding.
+// Proxy (antes "middleware" en Next 15):
+// 1. Resuelve el subdominio → organization slug y lo inyecta como header
+//    "x-org-slug" en el REQUEST que llega a la página. Tiene que ir en el
+//    request (no en la response) porque las páginas leen con headers() las
+//    headers entrantes.
+// 2. Refresca la sesión de Supabase en cada request (mantiene cookies vivas).
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Calcular el slug del subdominio
+  const host = request.headers.get("host") || "";
+  const slug = resolveOrgSlug(host);
+
+  // Headers del request modificados con el slug (para que getCurrentOrg lo
+  // pueda leer desde headers())
+  const forwardedHeaders = new Headers(request.headers);
+  if (slug) forwardedHeaders.set("x-org-slug", slug);
+
+  let response = NextResponse.next({
+    request: { headers: forwardedHeaders },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +32,9 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = NextResponse.next({
+            request: { headers: forwardedHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -31,18 +45,13 @@ export async function proxy(request: NextRequest) {
 
   await supabase.auth.getUser();
 
-  const host = request.headers.get("host") || "";
-  const slug = resolveOrgSlug(host);
-  if (slug) {
-    response.headers.set("x-org-slug", slug);
-  }
-
   return response;
 }
 
 function resolveOrgSlug(host: string): string | null {
   const hostname = host.split(":")[0]; // saca puerto
-  // localhost / 127.0.0.1 → no hay subdominio
+
+  // localhost / 127.0.0.1
   if (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
