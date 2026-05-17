@@ -1,4 +1,5 @@
 import type { LookupResult } from "@/lib/access/lookup";
+import { describeRule, isWithinAccessWindow } from "@/lib/access/rules";
 import type { Snapshot } from "./db";
 
 // Versión cliente del lookup. Misma semántica que `lib/access/lookup.ts`,
@@ -10,11 +11,27 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
     const vehicles = snap.vehicles
       .filter((v) => v.resident_id === resident.id)
       .map((v) => ({ plate: v.plate, make: v.make, model: v.model, color: v.color }));
+
+    const fullName = `${resident.first_name} ${resident.last_name}`;
+    const rule = snap.rules?.find((r) => r.kind === resident.kind);
+
+    if (rule && !isWithinAccessWindow(rule)) {
+      return {
+        state: "out_of_window",
+        dni,
+        fullName,
+        detail: `Fuera del horario habitual (${describeRule(rule)})`,
+        residentId: resident.id,
+        residentKind: resident.kind,
+        vehicles,
+      };
+    }
+
     return {
       state: "authorized",
       kind: "resident",
       dni,
-      fullName: `${resident.first_name} ${resident.last_name}`,
+      fullName,
       detail: resident.unit ? resident.unit : "Acceso permanente",
       residentId: resident.id,
       vehicles,

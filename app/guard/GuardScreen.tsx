@@ -251,7 +251,7 @@ export default function GuardScreen({
     setBusy(true);
     const r = screen.result;
     const fullName =
-      r.state === "authorized" || r.state === "expired"
+      r.state === "authorized" || r.state === "expired" || r.state === "out_of_window"
         ? r.fullName ?? screen.scannedName
         : screen.scannedName;
 
@@ -267,7 +267,9 @@ export default function GuardScreen({
         (r.state === "expired" && r.authorizationId) ||
         null,
       resident_id:
-        (r.state === "authorized" && r.kind === "resident" && r.residentId) || null,
+        (r.state === "authorized" && r.kind === "resident" && r.residentId) ||
+        (r.state === "out_of_window" && r.residentId) ||
+        null,
       occurred_at: new Date().toISOString(),
       gate_id: gateId,
       gate_label: currentGate?.name ?? null,
@@ -296,7 +298,9 @@ export default function GuardScreen({
     screen.kind === "result"
       ? screen.result.state === "authorized"
         ? "bg-emerald-600"
-        : "bg-amber-500"
+        : screen.result.state === "out_of_window"
+          ? "bg-orange-600"
+          : "bg-amber-500"
       : screen.kind === "confirmed"
         ? "bg-emerald-700"
         : screen.kind === "error"
@@ -509,22 +513,44 @@ function ResultView({
     );
   }
 
-  const headline = result.state === "expired" ? "AUTORIZACIÓN VENCIDA" : "DNI NO REGISTRADO";
+  const headline =
+    result.state === "expired"
+      ? "AUTORIZACIÓN VENCIDA"
+      : result.state === "out_of_window"
+        ? "FUERA DE HORARIO HABITUAL"
+        : "DNI NO REGISTRADO";
+
+  const displayName =
+    result.state === "expired" || result.state === "out_of_window"
+      ? result.fullName
+      : scannedName;
+
+  const km = result.state === "out_of_window" ? kindMeta(result.residentKind) : null;
+
   return (
     <div className="max-w-2xl">
       <div className="text-8xl mb-4">⚠️</div>
       <h1 className="text-4xl font-bold mb-2">{headline}</h1>
-      {(result.state === "expired" && result.fullName) || scannedName ? (
-        <p className="text-2xl font-semibold mb-1">
-          {result.state === "expired" ? result.fullName : scannedName}
-        </p>
-      ) : null}
+      {km && (
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 mb-3 text-sm font-bold">
+          {km.emoji} {km.label}
+        </div>
+      )}
+      {displayName && <p className="text-2xl font-semibold mb-1">{displayName}</p>}
       <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
       <p className="text-lg opacity-80 mb-6">{result.detail}</p>
       {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
         <button
-          onClick={() => onRegister({ result: "forced", reason: "Forzado por guardia" })}
+          onClick={() =>
+            onRegister({
+              result: "forced",
+              reason:
+                result.state === "out_of_window"
+                  ? "Fuera de horario habitual"
+                  : "Forzado por guardia",
+            })
+          }
           disabled={busy}
           className="bg-white text-amber-700 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >

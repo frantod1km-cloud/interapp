@@ -36,12 +36,17 @@ async function fail(msg: string): Promise<never> {
 }
 
 export async function createGuardAction(formData: FormData) {
-  const { orgId, userId: actorId } = await requireGuardManager();
+  const { orgId, userId: actorId, isLead } = await requireGuardManager();
   const back = await returnPath();
 
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const roleRaw = String(formData.get("role") ?? "guard");
+
+  // El admin puede crear guard o guard_lead. El jefe de guardia solo guard.
+  const targetRole =
+    roleRaw === "guard_lead" && !isLead ? "guard_lead" : "guard";
 
   if (!fullName || !email) await fail("Faltan nombre o email");
   if (password.length < 8) await fail("La contraseña tiene que tener al menos 8 caracteres");
@@ -79,7 +84,7 @@ export async function createGuardAction(formData: FormData) {
   const { error: memberErr } = await admin.from("org_members").insert({
     organization_id: orgId,
     user_id: userId,
-    role: "guard",
+    role: targetRole,
   });
   if (memberErr) await fail(memberErr.message);
 
@@ -89,7 +94,7 @@ export async function createGuardAction(formData: FormData) {
     action: "guard.create",
     entityType: "user",
     entityId: userId,
-    metadata: { email, full_name: fullName },
+    metadata: { email, full_name: fullName, role: targetRole },
   });
 
   revalidatePath(back);
@@ -97,7 +102,7 @@ export async function createGuardAction(formData: FormData) {
 }
 
 export async function removeGuardAction(formData: FormData) {
-  const { orgId, userId: actorId } = await requireGuardManager();
+  const { orgId, userId: actorId, isLead } = await requireGuardManager();
   const back = await returnPath();
   const memberId = String(formData.get("member_id") ?? "");
   if (!memberId) return;
@@ -105,27 +110,33 @@ export async function removeGuardAction(formData: FormData) {
   const admin = createAdminClient();
   const { data: member } = await admin
     .from("org_members")
-    .select("user_id")
+    .select("user_id, role")
     .eq("id", memberId)
     .eq("organization_id", orgId)
     .maybeSingle();
+
+  if (!member) return;
+
+  // Un jefe de guardia solo puede dar de baja role='guard', nunca 'guard_lead'
+  if (isLead && member.role !== "guard") {
+    await fail("Solo el admin del barrio puede dar de baja a un jefe de guardia");
+  }
 
   await admin
     .from("org_members")
     .delete()
     .eq("id", memberId)
     .eq("organization_id", orgId)
-    .eq("role", "guard");
+    .in("role", ["guard", "guard_lead"]);
 
-  if (member) {
-    await logAudit({
-      orgId,
-      userId: actorId,
-      action: "guard.remove",
-      entityType: "user",
-      entityId: member.user_id,
-    });
-  }
+  await logAudit({
+    orgId,
+    userId: actorId,
+    action: "guard.remove",
+    entityType: "user",
+    entityId: member.user_id,
+    metadata: { role: member.role },
+  });
 
   revalidatePath(back);
 }

@@ -36,12 +36,21 @@ export type SnapshotVehicle = {
   resident_id: string;
 };
 
+export type SnapshotRule = {
+  kind: string;
+  weekday_mask: number;
+  start_hour: number;
+  end_hour: number;
+  enabled: boolean;
+};
+
 export type Snapshot = {
   fetched_at: string;
   organization_id: string;
   residents: SnapshotResident[];
   authorizations: SnapshotAuthorization[];
   vehicles: SnapshotVehicle[];
+  rules: SnapshotRule[];
 };
 
 export type QueuedEvent = {

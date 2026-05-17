@@ -20,7 +20,7 @@ export async function GET() {
 
   const supabase = await createClient();
 
-  const [residentsResp, authsResp, vehiclesResp] = await Promise.all([
+  const [residentsResp, authsResp, vehiclesResp, rulesResp] = await Promise.all([
     supabase
       .from("residents")
       .select("id, dni, first_name, last_name, unit, kind")
@@ -36,6 +36,10 @@ export async function GET() {
     supabase
       .from("vehicles")
       .select("plate, make, model, color, resident_id")
+      .eq("organization_id", org.id),
+    supabase
+      .from("access_rules")
+      .select("kind, weekday_mask, start_hour, end_hour, enabled")
       .eq("organization_id", org.id),
   ]);
 
@@ -64,6 +68,7 @@ export async function GET() {
       };
     }),
     vehicles: vehiclesResp.data ?? [],
+    rules: rulesResp.data ?? [],
   };
 
   return NextResponse.json(snap);

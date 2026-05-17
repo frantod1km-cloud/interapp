@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { describeRule, isWithinAccessWindow, type AccessRule } from "./rules";
 
 export type VehicleHint = {
   plate: string;
@@ -25,6 +26,15 @@ export type LookupResult =
       fullName?: string;
       detail: string; // ej: "Autorización venció a las 18:00"
       authorizationId: string;
+    }
+  | {
+      state: "out_of_window";
+      dni: string;
+      fullName: string;
+      detail: string; // "Fuera del horario habitual (Lun-Vie 7-19)"
+      residentId: string;
+      residentKind: string;
+      vehicles?: VehicleHint[];
     }
   | {
       state: "unknown";
@@ -57,17 +67,40 @@ export async function lookupDni(
     .maybeSingle();
 
   if (resident) {
-    const { data: vehicles } = await supabase
-      .from("vehicles")
-      .select("plate, make, model, color")
-      .eq("organization_id", organizationId)
-      .eq("resident_id", resident.id);
+    const [{ data: vehicles }, { data: rule }] = await Promise.all([
+      supabase
+        .from("vehicles")
+        .select("plate, make, model, color")
+        .eq("organization_id", organizationId)
+        .eq("resident_id", resident.id),
+      supabase
+        .from("access_rules")
+        .select("kind, weekday_mask, start_hour, end_hour, enabled")
+        .eq("organization_id", organizationId)
+        .eq("kind", resident.kind)
+        .maybeSingle(),
+    ]);
+
+    const fullName = `${resident.first_name} ${resident.last_name}`;
+
+    // Si hay regla habilitada y estamos fuera de la ventana → AMARILLO
+    if (rule && !isWithinAccessWindow(rule as AccessRule)) {
+      return {
+        state: "out_of_window",
+        dni,
+        fullName,
+        detail: `Fuera del horario habitual (${describeRule(rule as AccessRule)})`,
+        residentId: resident.id,
+        residentKind: resident.kind,
+        vehicles: vehicles ?? [],
+      };
+    }
 
     return {
       state: "authorized",
       kind: "resident",
       dni,
-      fullName: `${resident.first_name} ${resident.last_name}`,
+      fullName,
       detail: resident.unit ? resident.unit : "Acceso permanente",
       residentId: resident.id,
       vehicles: vehicles ?? [],
