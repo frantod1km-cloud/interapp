@@ -21,6 +21,8 @@ export default function LoginPage() {
         setError(error.message);
         return;
       }
+      // Redirigir a "/" — el server decide el destino real según el rol del
+      // usuario en esta org. Esto evita revelar rutas al cliente.
       router.replace("/");
       router.refresh();
     });

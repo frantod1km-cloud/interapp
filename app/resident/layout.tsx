@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getCurrentMemberRole, getCurrentOrg } from "@/lib/org";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 
@@ -25,9 +24,12 @@ export default async function ResidentLayout({ children }: { children: React.Rea
       <SubscriptionBanner org={org} />
       <header className="border-b border-zinc-800 px-4 py-3 flex items-center justify-between sm:px-6">
         <div className="font-bold text-sm sm:text-base">{org.name}</div>
-        <nav className="flex gap-3 text-sm text-zinc-400">
+        <nav className="flex gap-3 text-sm text-zinc-400 items-center">
           <Link href="/resident" className="hover:text-white">Visitas</Link>
           <Link href="/resident/history" className="hover:text-white">Historial</Link>
+          <form action="/api/logout" method="post">
+            <button className="text-zinc-500 hover:text-white">Salir</button>
+          </form>
         </nav>
       </header>
       <main className="p-4 sm:p-6 max-w-2xl mx-auto">{children}</main>

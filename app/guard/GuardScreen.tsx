@@ -288,6 +288,9 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
               Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
+          <form action="/api/logout" method="post">
+            <button className="text-xs opacity-60 hover:opacity-100">Salir</button>
+          </form>
         </div>
       </header>
 
