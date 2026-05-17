@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPreapproval } from "@/lib/mp";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
 
 const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 const RESERVED_SLUGS = new Set([
@@ -32,6 +33,16 @@ export async function createOrgAction(formData: FormData) {
   const planId = String(formData.get("plan") ?? "trial") as PlanId;
   const plan = PLANS[planId];
   if (!plan || planId === "enterprise") fail(planId, "Plan inválido.");
+
+  // Rate limit: máximo 3 signups por IP por hora
+  const ip = await clientIp();
+  const rl = await rateLimit({
+    identifier: `ip:${ip}`,
+    action: "signup",
+    max: 3,
+    windowSeconds: 3600,
+  });
+  if (!rl.allowed) fail(planId, "Demasiados intentos de creación de barrio desde tu IP. Probá de nuevo más tarde.");
 
   const orgName = String(formData.get("org_name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase();

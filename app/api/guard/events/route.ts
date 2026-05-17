@@ -89,7 +89,44 @@ export async function POST(req: Request) {
   // Notificación push al residente cuando entra una visita suya
   await notifyResidents(events, org.name);
 
+  // Notificación push a los admins cuando hay un ingreso forzado (sospechoso)
+  if (forced.length > 0) {
+    await notifyAdminsOfForced(forced, org.id, org.name);
+  }
+
   return NextResponse.json({ confirmed: events.map((e) => e.client_id) });
+}
+
+// Alerta push a todos los org_admins de la org cuando hay ingresos forzados.
+// Junta los eventos en una sola notificación si son varios en el mismo batch
+// para no spamear.
+async function notifyAdminsOfForced(
+  forced: IncomingEvent[],
+  orgId: string,
+  orgName: string,
+): Promise<void> {
+  const admin = createAdminClient();
+  const { data: admins } = await admin
+    .from("org_members")
+    .select("user_id")
+    .eq("organization_id", orgId)
+    .eq("role", "org_admin");
+  if (!admins || admins.length === 0) return;
+
+  const body =
+    forced.length === 1
+      ? `Guardia forzó el ingreso de DNI ${forced[0].dni}${forced[0].full_name ? ` (${forced[0].full_name})` : ""}.`
+      : `Se forzaron ${forced.length} ingresos en este turno.`;
+
+  await Promise.all(
+    admins.map((a) =>
+      pushToUser(a.user_id, {
+        title: `⚠️ Ingreso forzado en ${orgName}`,
+        body,
+        url: "/admin/audit",
+      }),
+    ),
+  );
 }
 
 // Para cada evento de "entrada autorizada con authorization_id", buscamos

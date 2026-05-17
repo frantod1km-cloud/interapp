@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
 
 function fail(token: string, msg: string): never {
   redirect(`/v/${token}?error=${encodeURIComponent(msg)}`);
@@ -15,6 +16,16 @@ export async function claimInviteAction(formData: FormData) {
   if (!token) throw new Error("Token inválido");
   if (!dni || dni.length < 7) fail(token, "DNI inválido");
   if (!name) fail(token, "Cargá tu nombre completo");
+
+  // Rate limit: máximo 10 intentos por IP por hora (previene brute-force de tokens)
+  const ip = await clientIp();
+  const rl = await rateLimit({
+    identifier: `ip:${ip}`,
+    action: "claim_invite",
+    max: 10,
+    windowSeconds: 3600,
+  });
+  if (!rl.allowed) fail(token, "Demasiados intentos. Esperá unos minutos.");
 
   const admin = createAdminClient();
 

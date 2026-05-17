@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,20 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // Rate limit: máximo 10 alta de suscripciones por usuario por hora
+  const rl = await rateLimit({
+    identifier: `user:${user.id}`,
+    action: "push_subscribe",
+    max: 10,
+    windowSeconds: 3600,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
 
   let body: SubscriptionBody;
   try {

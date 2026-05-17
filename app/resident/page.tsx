@@ -4,6 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
 import EnableNotifications from "@/components/EnableNotifications";
 import { revokeAuthAction } from "./actions";
+import { applyTemplateAction } from "./templates/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +21,23 @@ export default async function ResidentHome() {
     .eq("user_id", user!.id)
     .maybeSingle();
 
-  const { data: auths } = await supabase
-    .from("authorizations")
-    .select("id, dni, visitor_name, valid_until, invite_token, claimed_at, created_at")
-    .eq("organization_id", org.id)
-    .eq("resident_id", resident?.id ?? "00000000-0000-0000-0000-000000000000")
-    .eq("revoked", false)
-    .gte("valid_until", new Date().toISOString())
-    .order("valid_until", { ascending: true });
+  const residentId = resident?.id ?? "00000000-0000-0000-0000-000000000000";
+
+  const [{ data: auths }, { data: templates }] = await Promise.all([
+    supabase
+      .from("authorizations")
+      .select("id, dni, visitor_name, valid_until, invite_token, claimed_at, created_at")
+      .eq("organization_id", org.id)
+      .eq("resident_id", residentId)
+      .eq("revoked", false)
+      .gte("valid_until", new Date().toISOString())
+      .order("valid_until", { ascending: true }),
+    supabase
+      .from("visit_templates")
+      .select("id, label")
+      .eq("resident_id", residentId)
+      .order("label"),
+  ]);
 
   return (
     <div>
@@ -64,7 +74,30 @@ export default async function ResidentHome() {
             />
           </div>
 
-          <h2 className="text-sm uppercase tracking-wider text-zinc-500 mb-3">Vigentes</h2>
+          {(templates ?? []).length > 0 && (
+            <>
+              <h2 className="text-sm uppercase tracking-wider text-zinc-500 mb-3">
+                Recurrentes (1 toque para autorizar hoy)
+              </h2>
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                {(templates ?? []).map((t) => (
+                  <form key={t.id} action={applyTemplateAction}>
+                    <input type="hidden" name="template_id" value={t.id} />
+                    <button className="w-full bg-sky-700 hover:bg-sky-600 font-semibold py-3 rounded-xl text-sm">
+                      🔁 {t.label}
+                    </button>
+                  </form>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm uppercase tracking-wider text-zinc-500">Vigentes</h2>
+            <Link href="/resident/templates" className="text-xs text-zinc-400 hover:text-white underline">
+              Plantillas recurrentes
+            </Link>
+          </div>
           <div className="space-y-2">
             {(auths ?? []).length === 0 && (
               <p className="text-zinc-500 text-sm">No tenés visitas autorizadas en este momento.</p>
