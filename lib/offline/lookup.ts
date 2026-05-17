@@ -15,9 +15,10 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
       kind: "resident",
       dni,
       fullName: `${resident.first_name} ${resident.last_name}`,
-      detail: resident.unit ? `Residente — ${resident.unit}` : "Residente",
+      detail: resident.unit ? resident.unit : "Acceso permanente",
       residentId: resident.id,
       vehicles,
+      residentKind: resident.kind,
     };
   }
 

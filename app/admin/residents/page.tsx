@@ -2,7 +2,12 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
-import { addResidentAction, toggleResidentActiveAction } from "./actions";
+import { RESIDENT_KINDS, kindMeta } from "@/lib/resident-kinds";
+import {
+  addResidentAction,
+  toggleResidentActiveAction,
+  updateResidentKindAction,
+} from "./actions";
 import InviteButton from "./InviteButton";
 
 export const dynamic = "force-dynamic";
@@ -10,19 +15,24 @@ export const dynamic = "force-dynamic";
 export default async function ResidentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ invited?: string; error?: string }>;
+  searchParams: Promise<{ invited?: string; error?: string; kind?: string }>;
 }) {
   const sp = await searchParams;
   const org = (await getCurrentOrg())!;
   const admin = createAdminClient();
 
-  const { data: residents } = await admin
+  let query = admin
     .from("residents")
-    .select("id, dni, first_name, last_name, unit, phone, active, user_id, created_at")
+    .select("id, dni, first_name, last_name, unit, phone, active, user_id, kind, created_at")
     .eq("organization_id", org.id)
     .order("last_name");
 
-  // Para los que tienen user_id, traemos el email
+  if (sp.kind && RESIDENT_KINDS.some((k) => k.id === sp.kind)) {
+    query = query.eq("kind", sp.kind);
+  }
+
+  const { data: residents } = await query;
+
   const emailsMap = new Map<string, string>();
   for (const r of residents ?? []) {
     if (r.user_id) {
@@ -31,10 +41,21 @@ export default async function ResidentsPage({
     }
   }
 
+  // Conteo por categoría (para los filtros)
+  const { data: allForCount } = await admin
+    .from("residents")
+    .select("kind")
+    .eq("organization_id", org.id);
+  const countsByKind = new Map<string, number>();
+  for (const r of allForCount ?? []) {
+    countsByKind.set(r.kind, (countsByKind.get(r.kind) ?? 0) + 1);
+  }
+  const totalCount = allForCount?.length ?? 0;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">Residentes</h1>
+        <h1 className="text-2xl font-bold">Personas con acceso</h1>
         <Link
           href="/admin/residents/import"
           className="bg-zinc-800 hover:bg-zinc-700 text-sm px-4 py-2 rounded-lg font-medium"
@@ -43,13 +64,13 @@ export default async function ResidentsPage({
         </Link>
       </div>
       <p className="text-zinc-400 text-sm mb-6">
-        Cargá las personas que viven en el barrio. Luego podés <strong>invitar</strong> a cada
-        residente a tener su propia cuenta para que autorice visitas desde el celular.
+        Cargá residentes, empleados del barrio, empleadas domésticas y otros con acceso recurrente.
+        La <strong>categoría</strong> es informativa para el guardia y para vos al filtrar.
       </p>
 
       {sp.invited && (
         <div className="bg-emerald-600/20 border border-emerald-600/40 rounded-2xl p-4 mb-4 text-sm">
-          ✅ Cuenta creada. Pasale al residente el email y contraseña que cargaste.
+          ✅ Cuenta creada.
         </div>
       )}
       {sp.error && (
@@ -58,10 +79,30 @@ export default async function ResidentsPage({
         </div>
       )}
 
+      {/* Filtros por categoría */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <FilterChip href="/admin/residents" active={!sp.kind} label={`Todos (${totalCount})`} />
+        {RESIDENT_KINDS.map((k) => (
+          <FilterChip
+            key={k.id}
+            href={`/admin/residents?kind=${k.id}`}
+            active={sp.kind === k.id}
+            label={`${k.emoji} ${k.short} (${countsByKind.get(k.id) ?? 0})`}
+          />
+        ))}
+      </div>
+
       <form
         action={addResidentAction}
-        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-6 gap-3"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-7 gap-3"
       >
+        <select name="kind" defaultValue="owner" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
+          {RESIDENT_KINDS.map((k) => (
+            <option key={k.id} value={k.id}>
+              {k.emoji} {k.short}
+            </option>
+          ))}
+        </select>
         <input name="dni" placeholder="DNI" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
         <input name="first_name" placeholder="Nombre" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
         <input name="last_name" placeholder="Apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
@@ -76,6 +117,7 @@ export default async function ResidentsPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-950 text-zinc-400 text-left">
             <tr>
+              <th className="px-4 py-3">Categoría</th>
               <th className="px-4 py-3">Apellido y Nombre</th>
               <th className="px-4 py-3">DNI</th>
               <th className="px-4 py-3">Unidad</th>
@@ -87,8 +129,26 @@ export default async function ResidentsPage({
           <tbody>
             {(residents ?? []).map((r) => {
               const email = r.user_id ? emailsMap.get(r.user_id) : null;
+              const k = kindMeta(r.kind);
               return (
                 <tr key={r.id} className="border-t border-zinc-800">
+                  <td className="px-4 py-3">
+                    <form action={updateResidentKindAction}>
+                      <input type="hidden" name="resident_id" value={r.id} />
+                      <select
+                        name="kind"
+                        defaultValue={r.kind}
+                        onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                        className={`bg-transparent border rounded px-2 py-1 text-xs ${k.className}`}
+                      >
+                        {RESIDENT_KINDS.map((opt) => (
+                          <option key={opt.id} value={opt.id} className="bg-zinc-900">
+                            {opt.emoji} {opt.short}
+                          </option>
+                        ))}
+                      </select>
+                    </form>
+                  </td>
                   <td className="px-4 py-3 font-medium">{r.last_name}, {r.first_name}</td>
                   <td className="px-4 py-3 tabular-nums">{formatDni(r.dni)}</td>
                   <td className="px-4 py-3 text-zinc-400">{r.unit ?? "—"}</td>
@@ -125,8 +185,8 @@ export default async function ResidentsPage({
             })}
             {(!residents || residents.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
-                  Aún no hay residentes cargados.
+                <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
+                  {sp.kind ? "No hay personas en esta categoría." : "Aún no hay residentes cargados."}
                 </td>
               </tr>
             )}
@@ -134,5 +194,20 @@ export default async function ResidentsPage({
         </table>
       </div>
     </div>
+  );
+}
+
+function FilterChip({ href, active, label }: { href: string; active: boolean; label: string }) {
+  return (
+    <Link
+      href={href}
+      className={`text-xs px-3 py-1.5 rounded-full border ${
+        active
+          ? "bg-emerald-600 border-emerald-500 text-white"
+          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white"
+      }`}
+    >
+      {label}
+    </Link>
   );
 }

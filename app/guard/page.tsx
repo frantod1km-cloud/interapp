@@ -23,7 +23,7 @@ export default async function GuardPage() {
 
   const role = await getCurrentMemberRole(org.id);
   if (!role) redirect("/login");
-  if (role !== "guard" && role !== "org_admin") {
+  if (role !== "guard" && role !== "guard_lead" && role !== "org_admin") {
     return (
       <main className="min-h-screen flex items-center justify-center p-8">
         <p>No tenés permiso para acceder al control de accesos.</p>
@@ -39,5 +39,11 @@ export default async function GuardPage() {
     .eq("active", true)
     .order("name");
 
-  return <GuardScreen orgName={org.name} gates={gates ?? []} />;
+  return (
+    <GuardScreen
+      orgName={org.name}
+      gates={gates ?? []}
+      isLead={role === "guard_lead" || role === "org_admin"}
+    />
+  );
 }

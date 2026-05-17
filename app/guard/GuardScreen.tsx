@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDni, parseDni } from "@/lib/dni/parse";
 import type { LookupResult } from "@/lib/access/lookup";
+import { kindMeta } from "@/lib/resident-kinds";
 import {
   enqueue,
   listQueue,
@@ -33,7 +34,15 @@ type Gate = { id: string; name: string };
 
 const GATE_LS_KEY = "interapp.guard.gate";
 
-export default function GuardScreen({ orgName, gates }: { orgName: string; gates: Gate[] }) {
+export default function GuardScreen({
+  orgName,
+  gates,
+  isLead,
+}: {
+  orgName: string;
+  gates: Gate[];
+  isLead: boolean;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [screen, setScreen] = useState<Screen>({ kind: "idle" });
@@ -379,6 +388,11 @@ export default function GuardScreen({ orgName, gates }: { orgName: string; gates
               Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
+          {isLead && (
+            <a href="/guard/supervision" className="text-xs opacity-60 hover:opacity-100">
+              Supervisión
+            </a>
+          )}
           <form action="/api/logout" method="post">
             <button className="text-xs opacity-60 hover:opacity-100">Salir</button>
           </form>
@@ -453,10 +467,16 @@ function ResultView({
 
   if (result.state === "authorized") {
     const vehicles = result.vehicles ?? [];
+    const km = result.kind === "resident" && result.residentKind ? kindMeta(result.residentKind) : null;
     return (
       <div className="max-w-2xl">
         <div className="text-8xl mb-4">✅</div>
         <h1 className="text-5xl font-bold mb-2">AUTORIZADO</h1>
+        {km && (
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 mb-3 text-sm font-bold">
+            {km.emoji} {km.label}
+          </div>
+        )}
         <p className="text-3xl font-semibold mb-1">{result.fullName}</p>
         <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
         <p className="text-lg opacity-80 mb-3">{result.detail}</p>

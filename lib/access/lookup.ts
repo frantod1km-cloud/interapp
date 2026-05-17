@@ -17,6 +17,7 @@ export type LookupResult =
       residentId?: string;
       authorizationId?: string;
       vehicles?: VehicleHint[]; // patentes asociadas
+      residentKind?: string;    // owner | tenant | family | staff | domestic | contractor
     }
   | {
       state: "expired";
@@ -49,7 +50,7 @@ export async function lookupDni(
   // 1. ¿Es residente activo?
   const { data: resident } = await supabase
     .from("residents")
-    .select("id, first_name, last_name, unit")
+    .select("id, first_name, last_name, unit, kind")
     .eq("organization_id", organizationId)
     .eq("dni", dni)
     .eq("active", true)
@@ -67,9 +68,10 @@ export async function lookupDni(
       kind: "resident",
       dni,
       fullName: `${resident.first_name} ${resident.last_name}`,
-      detail: resident.unit ? `Residente — ${resident.unit}` : "Residente",
+      detail: resident.unit ? resident.unit : "Acceso permanente",
       residentId: resident.id,
       vehicles: vehicles ?? [],
+      residentKind: resident.kind,
     };
   }
 

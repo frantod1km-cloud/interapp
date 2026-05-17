@@ -21,6 +21,8 @@ function fail(msg: string, hash?: string): never {
   redirect(`/admin/residents?error=${encodeURIComponent(msg)}${hash ? `#${hash}` : ""}`);
 }
 
+const ALLOWED_KINDS = new Set(["owner", "tenant", "family", "staff", "domestic", "contractor"]);
+
 export async function addResidentAction(formData: FormData) {
   const { orgId, userId } = await requireOrgAdmin();
 
@@ -29,13 +31,15 @@ export async function addResidentAction(formData: FormData) {
   const lastName = String(formData.get("last_name") ?? "").trim();
   const unit = String(formData.get("unit") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
+  const kindRaw = String(formData.get("kind") ?? "owner");
+  const kind = ALLOWED_KINDS.has(kindRaw) ? kindRaw : "owner";
 
   if (!dni || !firstName || !lastName) fail("DNI, nombre y apellido son obligatorios.");
 
   const supabase = await createClient();
   const { data: created, error } = await supabase
     .from("residents")
-    .insert({ organization_id: orgId, dni, first_name: firstName, last_name: lastName, unit, phone })
+    .insert({ organization_id: orgId, dni, first_name: firstName, last_name: lastName, unit, phone, kind })
     .select("id")
     .single();
   if (error) fail(error.message);
@@ -46,8 +50,24 @@ export async function addResidentAction(formData: FormData) {
     action: "resident.create",
     entityType: "resident",
     entityId: created?.id,
-    metadata: { dni, name: `${firstName} ${lastName}`, unit },
+    metadata: { dni, name: `${firstName} ${lastName}`, unit, kind },
   });
+
+  revalidatePath("/admin/residents");
+}
+
+export async function updateResidentKindAction(formData: FormData) {
+  const { orgId } = await requireOrgAdmin();
+  const residentId = String(formData.get("resident_id") ?? "");
+  const kindRaw = String(formData.get("kind") ?? "");
+  if (!residentId || !ALLOWED_KINDS.has(kindRaw)) return;
+
+  const admin = createAdminClient();
+  await admin
+    .from("residents")
+    .update({ kind: kindRaw })
+    .eq("id", residentId)
+    .eq("organization_id", orgId);
 
   revalidatePath("/admin/residents");
 }

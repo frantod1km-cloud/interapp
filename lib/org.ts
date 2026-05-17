@@ -30,9 +30,11 @@ export async function getCurrentOrg(): Promise<Organization | null> {
 
 // Devuelve el rol del usuario actual en la org actual, o null si no es miembro
 // (o si no hay sesión).
+export type MemberRole = "org_admin" | "guard_lead" | "guard" | "resident" | "viewer";
+
 export async function getCurrentMemberRole(
   organizationId: string,
-): Promise<"org_admin" | "guard" | "resident" | "viewer" | null> {
+): Promise<MemberRole | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -44,5 +46,5 @@ export async function getCurrentMemberRole(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return (data?.role as "org_admin" | "guard" | "resident" | "viewer") ?? null;
+  return (data?.role as MemberRole) ?? null;
 }

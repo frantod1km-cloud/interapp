@@ -23,7 +23,7 @@ export async function GET() {
   const [residentsResp, authsResp, vehiclesResp] = await Promise.all([
     supabase
       .from("residents")
-      .select("id, dni, first_name, last_name, unit")
+      .select("id, dni, first_name, last_name, unit, kind")
       .eq("organization_id", org.id)
       .eq("active", true),
     supabase

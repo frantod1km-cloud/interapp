@@ -17,7 +17,7 @@ export default async function Home() {
     // No mostramos un selector — cada usuario tiene un único destino.
     if (user) {
       const role = await getCurrentMemberRole(org.id);
-      if (role === "guard") redirect("/guard");
+      if (role === "guard" || role === "guard_lead") redirect("/guard");
       if (role === "org_admin") redirect("/admin");
       if (role === "resident") redirect("/resident");
       // Usuario logueado pero NO miembro de esta org: pantalla de aviso

@@ -16,6 +16,7 @@ export type SnapshotResident = {
   first_name: string;
   last_name: string;
   unit: string | null;
+  kind: string;
 };
 
 export type SnapshotAuthorization = {
