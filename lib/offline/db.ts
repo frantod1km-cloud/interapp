@@ -21,6 +21,7 @@ export type SnapshotResident = {
   weekday_mask: number;
   start_hour: number;
   end_hour: number;
+  access_expires_at: string | null;
 };
 
 export type SnapshotAuthorization = {

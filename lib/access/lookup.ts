@@ -38,6 +38,14 @@ export type LookupResult =
       vehicles?: VehicleHint[];
     }
   | {
+      state: "access_expired";
+      dni: string;
+      fullName: string;
+      detail: string; // "Acceso vencido el 30/06/2026"
+      residentId: string;
+      residentKind: string;
+    }
+  | {
       state: "unknown";
       dni: string;
       detail: string; // "DNI no figura en el padrón"
@@ -61,13 +69,26 @@ export async function lookupDni(
   // 1. ¿Es residente activo?
   const { data: resident } = await supabase
     .from("residents")
-    .select("id, first_name, last_name, unit, kind, weekday_mask, start_hour, end_hour, rule_enabled")
+    .select("id, first_name, last_name, unit, kind, weekday_mask, start_hour, end_hour, rule_enabled, access_expires_at")
     .eq("organization_id", organizationId)
     .eq("dni", dni)
     .eq("active", true)
     .maybeSingle();
 
   if (resident) {
+    const fullName = `${resident.first_name} ${resident.last_name}`;
+
+    // Expiración tiene prioridad sobre cualquier otra regla
+    if (resident.access_expires_at && new Date(resident.access_expires_at) < new Date()) {
+      return {
+        state: "access_expired",
+        dni,
+        fullName,
+        detail: `Acceso vencido el ${new Date(resident.access_expires_at).toLocaleDateString("es-AR")}`,
+        residentId: resident.id,
+        residentKind: resident.kind,
+      };
+    }
     // Si la persona tiene una regla individual habilitada, esa manda.
     // Si no tiene regla individual y es staff (empleado del barrio), caemos
     // al fallback global de access_rules para staff. Para owner/tenant/family
@@ -95,8 +116,6 @@ export async function lookupDni(
         .eq("resident_id", resident.id)
         .eq("status", "pending"),
     ]);
-
-    const fullName = `${resident.first_name} ${resident.last_name}`;
 
     // Construir la regla efectiva: individual > categoría (solo staff)
     const effectiveRule: AccessRule | null = resident.rule_enabled

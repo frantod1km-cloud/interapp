@@ -8,11 +8,23 @@ import type { Snapshot } from "./db";
 export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
   const resident = snap.residents.find((r) => r.dni === dni);
   if (resident) {
+    const fullName = `${resident.first_name} ${resident.last_name}`;
+
+    // Expiración tiene prioridad sobre cualquier otra regla
+    if (resident.access_expires_at && new Date(resident.access_expires_at) < new Date()) {
+      return {
+        state: "access_expired",
+        dni,
+        fullName,
+        detail: `Acceso vencido el ${new Date(resident.access_expires_at).toLocaleDateString("es-AR")}`,
+        residentId: resident.id,
+        residentKind: resident.kind,
+      };
+    }
+
     const vehicles = snap.vehicles
       .filter((v) => v.resident_id === resident.id)
       .map((v) => ({ plate: v.plate, make: v.make, model: v.model, color: v.color }));
-
-    const fullName = `${resident.first_name} ${resident.last_name}`;
 
     // Regla efectiva: individual > categoría (solo staff)
     const personalRule = resident.rule_enabled

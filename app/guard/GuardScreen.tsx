@@ -251,7 +251,10 @@ export default function GuardScreen({
     setBusy(true);
     const r = screen.result;
     const fullName =
-      r.state === "authorized" || r.state === "expired" || r.state === "out_of_window"
+      r.state === "authorized" ||
+      r.state === "expired" ||
+      r.state === "out_of_window" ||
+      r.state === "access_expired"
         ? r.fullName ?? screen.scannedName
         : screen.scannedName;
 
@@ -269,6 +272,7 @@ export default function GuardScreen({
       resident_id:
         (r.state === "authorized" && r.kind === "resident" && r.residentId) ||
         (r.state === "out_of_window" && r.residentId) ||
+        (r.state === "access_expired" && r.residentId) ||
         null,
       occurred_at: new Date().toISOString(),
       gate_id: gateId,
@@ -300,7 +304,9 @@ export default function GuardScreen({
         ? "bg-emerald-600"
         : screen.result.state === "out_of_window"
           ? "bg-orange-600"
-          : "bg-amber-500"
+          : screen.result.state === "access_expired"
+            ? "bg-rose-700"
+            : "bg-amber-500"
       : screen.kind === "confirmed"
         ? "bg-emerald-700"
         : screen.kind === "error"
@@ -532,14 +538,21 @@ function ResultView({
       ? "AUTORIZACIÓN VENCIDA"
       : result.state === "out_of_window"
         ? "FUERA DE HORARIO HABITUAL"
-        : "DNI NO REGISTRADO";
+        : result.state === "access_expired"
+          ? "ACCESO VENCIDO"
+          : "DNI NO REGISTRADO";
 
   const displayName =
-    result.state === "expired" || result.state === "out_of_window"
+    result.state === "expired" ||
+    result.state === "out_of_window" ||
+    result.state === "access_expired"
       ? result.fullName
       : scannedName;
 
-  const km = result.state === "out_of_window" ? kindMeta(result.residentKind) : null;
+  const km =
+    result.state === "out_of_window" || result.state === "access_expired"
+      ? kindMeta(result.residentKind)
+      : null;
 
   return (
     <div className="max-w-2xl">
@@ -562,7 +575,9 @@ function ResultView({
               reason:
                 result.state === "out_of_window"
                   ? "Fuera de horario habitual"
-                  : "Forzado por guardia",
+                  : result.state === "access_expired"
+                    ? "Acceso vencido"
+                    : "Forzado por guardia",
             })
           }
           disabled={busy}

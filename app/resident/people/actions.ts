@@ -34,10 +34,20 @@ export async function addPersonAction(formData: FormData): Promise<void> {
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
   const kindRaw = String(formData.get("kind") ?? "");
+  const expiresAtRaw = String(formData.get("access_expires_at") ?? "").trim();
 
   if (!dni || dni.length < 7) fail("DNI inválido");
   if (!firstName || !lastName) fail("Faltan nombre o apellido");
   const kind = ALLOWED_KINDS.has(kindRaw) ? kindRaw : "domestic";
+
+  // Si vino una fecha (formato YYYY-MM-DD), la convertimos a fin del día local
+  // para que la persona pueda entrar durante todo ese día.
+  let expiresAt: string | null = null;
+  if (expiresAtRaw) {
+    const d = new Date(`${expiresAtRaw}T23:59:59`);
+    if (isNaN(d.getTime())) fail("Fecha de vencimiento inválida");
+    expiresAt = d.toISOString();
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("residents").insert({
@@ -47,13 +57,38 @@ export async function addPersonAction(formData: FormData): Promise<void> {
     first_name: firstName,
     last_name: lastName,
     kind,
-    rule_enabled: false, // arranca sin restricción; el residente edita después
+    rule_enabled: false, // arranca sin restricción horaria
+    access_expires_at: expiresAt,
   });
 
   if (error) fail(error.message);
 
   revalidatePath("/resident/people");
   redirect("/resident/people?added=1");
+}
+
+// Actualiza solo la fecha de expiración. Vacío = sin vencimiento (acceso permanente).
+export async function updatePersonExpiryAction(formData: FormData): Promise<void> {
+  const { residentId } = await currentResident();
+  const id = String(formData.get("person_id") ?? "");
+  const expiresAtRaw = String(formData.get("access_expires_at") ?? "").trim();
+  if (!id) return;
+
+  let expiresAt: string | null = null;
+  if (expiresAtRaw) {
+    const d = new Date(`${expiresAtRaw}T23:59:59`);
+    if (isNaN(d.getTime())) fail("Fecha inválida");
+    expiresAt = d.toISOString();
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from("residents")
+    .update({ access_expires_at: expiresAt })
+    .eq("id", id)
+    .eq("authorized_by_resident_id", residentId);
+
+  revalidatePath("/resident/people");
 }
 
 export async function removePersonAction(formData: FormData): Promise<void> {
