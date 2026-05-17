@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentMemberRole, getCurrentOrg } from "@/lib/org";
 import GuardScreen from "./GuardScreen";
 
@@ -30,5 +31,13 @@ export default async function GuardPage() {
     );
   }
 
-  return <GuardScreen orgName={org.name} />;
+  const supabase = await createClient();
+  const { data: gates } = await supabase
+    .from("gates")
+    .select("id, name")
+    .eq("organization_id", org.id)
+    .eq("active", true)
+    .order("name");
+
+  return <GuardScreen orgName={org.name} gates={gates ?? []} />;
 }

@@ -29,7 +29,11 @@ function uuid() {
   return crypto.randomUUID();
 }
 
-export default function GuardScreen({ orgName }: { orgName: string }) {
+type Gate = { id: string; name: string };
+
+const GATE_LS_KEY = "interapp.guard.gate";
+
+export default function GuardScreen({ orgName, gates }: { orgName: string; gates: Gate[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [screen, setScreen] = useState<Screen>({ kind: "idle" });
@@ -38,6 +42,32 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
   const [queueSize, setQueueSize] = useState(0);
   const [snapshotAge, setSnapshotAge] = useState<string | null>(null);
   const [direction, setDirection] = useState<"in" | "out">("in");
+  const [gateId, setGateId] = useState<string | null>(null);
+  const [showGatePicker, setShowGatePicker] = useState(false);
+
+  const currentGate = gates.find((g) => g.id === gateId) ?? null;
+
+  // Cargar gate persistida en este dispositivo
+  useEffect(() => {
+    if (gates.length === 0) return;
+    const saved = localStorage.getItem(GATE_LS_KEY);
+    if (saved && gates.some((g) => g.id === saved)) {
+      setGateId(saved);
+    } else if (gates.length === 1) {
+      // Si hay una sola garita, la asignamos sin preguntar
+      setGateId(gates[0].id);
+      localStorage.setItem(GATE_LS_KEY, gates[0].id);
+    } else {
+      // Hay múltiples y no eligió todavía → mostrar selector
+      setShowGatePicker(true);
+    }
+  }, [gates]);
+
+  const chooseGate = (id: string) => {
+    setGateId(id);
+    localStorage.setItem(GATE_LS_KEY, id);
+    setShowGatePicker(false);
+  };
 
   // --- focus permanente ---
   const refocus = useCallback(() => {
@@ -230,6 +260,8 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
       resident_id:
         (r.state === "authorized" && r.kind === "resident" && r.residentId) || null,
       occurred_at: new Date().toISOString(),
+      gate_id: gateId,
+      gate_label: currentGate?.name ?? null,
     };
 
     // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
@@ -278,8 +310,40 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
         aria-label="Escaneá el DNI"
       />
 
+      {showGatePicker && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-2">¿En qué garita estás?</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Esto identifica a esta tablet. Solo se elige una vez por dispositivo.
+            </p>
+            <div className="grid gap-2">
+              {gates.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => chooseGate(g.id)}
+                  className="bg-zinc-800 hover:bg-emerald-600 font-semibold py-4 rounded-xl text-left px-4"
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="flex items-center justify-between px-6 py-3 bg-black/30 text-sm gap-3 flex-wrap">
-        <div className="font-semibold">{orgName}</div>
+        <div className="font-semibold">
+          {orgName}
+          {currentGate && (
+            <button
+              onClick={() => setShowGatePicker(true)}
+              className="ml-2 text-xs px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 font-normal opacity-80"
+            >
+              📍 {currentGate.name}
+            </button>
+          )}
+        </div>
 
         {/* Toggle dirección — el guardia lo cambia para registrar entradas vs salidas */}
         <div className="flex bg-black/40 rounded-lg p-0.5">

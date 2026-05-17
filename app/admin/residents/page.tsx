@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
@@ -32,7 +33,15 @@ export default async function ResidentsPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Residentes</h1>
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+        <h1 className="text-2xl font-bold">Residentes</h1>
+        <Link
+          href="/admin/residents/import"
+          className="bg-zinc-800 hover:bg-zinc-700 text-sm px-4 py-2 rounded-lg font-medium"
+        >
+          📋 Importar CSV
+        </Link>
+      </div>
       <p className="text-zinc-400 text-sm mb-6">
         Cargá las personas que viven en el barrio. Luego podés <strong>invitar</strong> a cada
         residente a tener su propia cuenta para que autorice visitas desde el celular.

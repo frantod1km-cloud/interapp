@@ -5,13 +5,16 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
+import { logAudit } from "@/lib/audit";
 
-async function requireOrgAdmin(): Promise<{ orgId: string }> {
+async function requireOrgAdmin(): Promise<{ orgId: string; userId: string }> {
   const org = await getCurrentOrg();
   if (!org) throw new Error("Sin organización");
   const role = await getCurrentMemberRole(org.id);
   if (role !== "org_admin") throw new Error("Solo el admin del barrio puede hacer esto");
-  return { orgId: org.id };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return { orgId: org.id, userId: user!.id };
 }
 
 function fail(msg: string, hash?: string): never {
@@ -19,7 +22,7 @@ function fail(msg: string, hash?: string): never {
 }
 
 export async function addResidentAction(formData: FormData) {
-  const { orgId } = await requireOrgAdmin();
+  const { orgId, userId } = await requireOrgAdmin();
 
   const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
   const firstName = String(formData.get("first_name") ?? "").trim();
@@ -30,21 +33,27 @@ export async function addResidentAction(formData: FormData) {
   if (!dni || !firstName || !lastName) fail("DNI, nombre y apellido son obligatorios.");
 
   const supabase = await createClient();
-  const { error } = await supabase.from("residents").insert({
-    organization_id: orgId,
-    dni,
-    first_name: firstName,
-    last_name: lastName,
-    unit,
-    phone,
-  });
+  const { data: created, error } = await supabase
+    .from("residents")
+    .insert({ organization_id: orgId, dni, first_name: firstName, last_name: lastName, unit, phone })
+    .select("id")
+    .single();
   if (error) fail(error.message);
+
+  await logAudit({
+    orgId,
+    userId,
+    action: "resident.create",
+    entityType: "resident",
+    entityId: created?.id,
+    metadata: { dni, name: `${firstName} ${lastName}`, unit },
+  });
 
   revalidatePath("/admin/residents");
 }
 
 export async function inviteResidentAction(formData: FormData) {
-  const { orgId } = await requireOrgAdmin();
+  const { orgId, userId: actorId } = await requireOrgAdmin();
   const residentId = String(formData.get("resident_id") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -107,12 +116,21 @@ export async function inviteResidentAction(formData: FormData) {
       return res;
     });
 
+  await logAudit({
+    orgId,
+    userId: actorId,
+    action: "resident.invite",
+    entityType: "resident",
+    entityId: residentId,
+    metadata: { email, resident_user_id: userId },
+  });
+
   revalidatePath("/admin/residents");
   redirect("/admin/residents?invited=1");
 }
 
 export async function toggleResidentActiveAction(formData: FormData) {
-  const { orgId } = await requireOrgAdmin();
+  const { orgId, userId } = await requireOrgAdmin();
   const residentId = String(formData.get("resident_id") ?? "");
   const active = formData.get("active") === "true";
   if (!residentId) return;
@@ -123,6 +141,14 @@ export async function toggleResidentActiveAction(formData: FormData) {
     .update({ active })
     .eq("id", residentId)
     .eq("organization_id", orgId);
+
+  await logAudit({
+    orgId,
+    userId,
+    action: active ? "resident.reactivate" : "resident.deactivate",
+    entityType: "resident",
+    entityId: residentId,
+  });
 
   revalidatePath("/admin/residents");
 }

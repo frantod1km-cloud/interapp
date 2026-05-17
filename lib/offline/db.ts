@@ -53,6 +53,8 @@ export type QueuedEvent = {
   authorization_id: string | null;
   resident_id: string | null;
   occurred_at: string;        // ISO local
+  gate_id: string | null;
+  gate_label: string | null;
 };
 
 function openDb(): Promise<IDBDatabase> {

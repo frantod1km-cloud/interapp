@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
+import EnableNotifications from "@/components/EnableNotifications";
 import { revokeAuthAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export default async function ResidentHome() {
         </div>
       ) : (
         <>
-          <div className="flex gap-3 mb-6">
+          <div className="flex gap-3 mb-4">
             <Link
               href="/resident/authorize"
               className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-center font-semibold py-4 rounded-2xl"
@@ -55,6 +56,12 @@ export default async function ResidentHome() {
             >
               Generar link
             </Link>
+          </div>
+
+          <div className="mb-6">
+            <EnableNotifications
+              vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+            />
           </div>
 
           <h2 className="text-sm uppercase tracking-wider text-zinc-500 mb-3">Vigentes</h2>
