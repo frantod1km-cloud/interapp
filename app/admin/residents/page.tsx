@@ -2,13 +2,10 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { formatDni } from "@/lib/dni/parse";
-import { RESIDENT_KINDS, kindMeta } from "@/lib/resident-kinds";
-import {
-  addResidentAction,
-  toggleResidentActiveAction,
-  updateResidentKindAction,
-} from "./actions";
+import { RESIDENT_KINDS } from "@/lib/resident-kinds";
+import { addResidentAction, toggleResidentActiveAction } from "./actions";
 import InviteButton from "./InviteButton";
+import KindSelector from "./KindSelector";
 
 export const dynamic = "force-dynamic";
 
@@ -129,25 +126,10 @@ export default async function ResidentsPage({
           <tbody>
             {(residents ?? []).map((r) => {
               const email = r.user_id ? emailsMap.get(r.user_id) : null;
-              const k = kindMeta(r.kind);
               return (
                 <tr key={r.id} className="border-t border-zinc-800">
                   <td className="px-4 py-3">
-                    <form action={updateResidentKindAction}>
-                      <input type="hidden" name="resident_id" value={r.id} />
-                      <select
-                        name="kind"
-                        defaultValue={r.kind}
-                        onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                        className={`bg-transparent border rounded px-2 py-1 text-xs ${k.className}`}
-                      >
-                        {RESIDENT_KINDS.map((opt) => (
-                          <option key={opt.id} value={opt.id} className="bg-zinc-900">
-                            {opt.emoji} {opt.short}
-                          </option>
-                        ))}
-                      </select>
-                    </form>
+                    <KindSelector residentId={r.id} currentKind={r.kind} />
                   </td>
                   <td className="px-4 py-3 font-medium">{r.last_name}, {r.first_name}</td>
                   <td className="px-4 py-3 tabular-nums">{formatDni(r.dni)}</td>
