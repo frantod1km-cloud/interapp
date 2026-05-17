@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { RESIDENT_KINDS } from "@/lib/resident-kinds";
@@ -12,6 +13,12 @@ const PRESETS = [
   { label: "Sáb y Dom", mask: 65 },     // 0b1000001
   { label: "Solo Lun, Mié, Vie", mask: 42 }, // 0b0101010
 ];
+
+// Reglas globales SOLO para empleados del barrio (staff).
+// Los demás kinds (owner/tenant/family/domestic/contractor) los gestiona
+// cada residente desde /resident/people, porque cada propietario tiene su
+// propia nómina.
+const RULE_KIND_IDS = ["staff"] as const;
 
 export default async function AccessRulesPage({
   searchParams,
@@ -34,15 +41,16 @@ export default async function AccessRulesPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Reglas de acceso por categoría</h1>
-      <p className="text-zinc-400 text-sm mb-6">
-        Configurá horarios para cada categoría de persona con acceso. Si alguien
-        intenta entrar fuera de su ventana, el guardia ve una alerta amarilla y decide
-        forzar el ingreso o rechazarlo.
-        <br />
-        <span className="text-zinc-500 text-xs">
-          Las categorías sin regla configurada entran sin restricción (comportamiento por defecto).
-        </span>
+      <h1 className="text-2xl font-bold mb-2">Horario de empleados del barrio</h1>
+      <p className="text-zinc-400 text-sm mb-2">
+        Configurá horarios para los empleados de la <strong>administración</strong>: personal de
+        limpieza pública, mantenimiento, jardinería de áreas comunes, etc. Todos los que estén
+        marcados como categoría <strong>Empleado del barrio</strong>.
+      </p>
+      <p className="text-zinc-500 text-xs mb-6">
+        Las personas que vienen a una casa específica (empleada doméstica, jardinero de un
+        propietario, proveedor recurrente) las gestiona cada residente desde su propio panel.
+        Cada uno define sus horarios.
       </p>
 
       {sp.saved && (
@@ -57,7 +65,7 @@ export default async function AccessRulesPage({
       )}
 
       <div className="grid gap-4">
-        {RESIDENT_KINDS.map((k) => {
+        {RESIDENT_KINDS.filter((k) => (RULE_KIND_IDS as readonly string[]).includes(k.id)).map((k) => {
           const rule = rulesByKind.get(k.id);
           return (
             <div

@@ -17,6 +17,10 @@ export type SnapshotResident = {
   last_name: string;
   unit: string | null;
   kind: string;
+  rule_enabled: boolean;
+  weekday_mask: number;
+  start_hour: number;
+  end_hour: number;
 };
 
 export type SnapshotAuthorization = {

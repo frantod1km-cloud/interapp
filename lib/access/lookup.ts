@@ -61,25 +61,33 @@ export async function lookupDni(
   // 1. ¿Es residente activo?
   const { data: resident } = await supabase
     .from("residents")
-    .select("id, first_name, last_name, unit, kind")
+    .select("id, first_name, last_name, unit, kind, weekday_mask, start_hour, end_hour, rule_enabled")
     .eq("organization_id", organizationId)
     .eq("dni", dni)
     .eq("active", true)
     .maybeSingle();
 
   if (resident) {
-    const [{ data: vehicles }, { data: rule }, { count: pendingPackages }] = await Promise.all([
+    // Si la persona tiene una regla individual habilitada, esa manda.
+    // Si no tiene regla individual y es staff (empleado del barrio), caemos
+    // al fallback global de access_rules para staff. Para owner/tenant/family
+    // sin regla individual no hay restricción.
+    const needsCategoryRule = !resident.rule_enabled && resident.kind === "staff";
+
+    const [{ data: vehicles }, { data: categoryRule }, { count: pendingPackages }] = await Promise.all([
       supabase
         .from("vehicles")
         .select("plate, make, model, color")
         .eq("organization_id", organizationId)
         .eq("resident_id", resident.id),
-      supabase
-        .from("access_rules")
-        .select("kind, weekday_mask, start_hour, end_hour, enabled")
-        .eq("organization_id", organizationId)
-        .eq("kind", resident.kind)
-        .maybeSingle(),
+      needsCategoryRule
+        ? supabase
+            .from("access_rules")
+            .select("kind, weekday_mask, start_hour, end_hour, enabled")
+            .eq("organization_id", organizationId)
+            .eq("kind", "staff")
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
       supabase
         .from("packages")
         .select("*", { count: "exact", head: true })
@@ -90,13 +98,23 @@ export async function lookupDni(
 
     const fullName = `${resident.first_name} ${resident.last_name}`;
 
-    // Si hay regla habilitada y estamos fuera de la ventana → AMARILLO
-    if (rule && !isWithinAccessWindow(rule as AccessRule)) {
+    // Construir la regla efectiva: individual > categoría (solo staff)
+    const effectiveRule: AccessRule | null = resident.rule_enabled
+      ? {
+          kind: resident.kind,
+          weekday_mask: resident.weekday_mask,
+          start_hour: resident.start_hour,
+          end_hour: resident.end_hour,
+          enabled: true,
+        }
+      : (categoryRule as AccessRule | null);
+
+    if (effectiveRule && !isWithinAccessWindow(effectiveRule)) {
       return {
         state: "out_of_window",
         dni,
         fullName,
-        detail: `Fuera del horario habitual (${describeRule(rule as AccessRule)})`,
+        detail: `Fuera del horario habitual (${describeRule(effectiveRule)})`,
         residentId: resident.id,
         residentKind: resident.kind,
         vehicles: vehicles ?? [],

@@ -20,7 +20,7 @@ export default async function ResidentsPage({
 
   let query = admin
     .from("residents")
-    .select("id, dni, first_name, last_name, unit, phone, active, user_id, kind, created_at")
+    .select("id, dni, first_name, last_name, unit, phone, active, user_id, kind, created_at, authorized_by_resident_id")
     .eq("organization_id", org.id)
     .order("last_name");
 
@@ -35,6 +35,21 @@ export default async function ResidentsPage({
     if (r.user_id) {
       const { data: u } = await admin.auth.admin.getUserById(r.user_id);
       if (u?.user?.email) emailsMap.set(r.user_id, u.user.email);
+    }
+  }
+
+  // Diccionario de "autorizado por" → "Apellido, Nombre"
+  const authorizerIds = Array.from(
+    new Set((residents ?? []).map((r) => r.authorized_by_resident_id).filter(Boolean) as string[]),
+  );
+  const authorizers = new Map<string, string>();
+  if (authorizerIds.length > 0) {
+    const { data: arr } = await admin
+      .from("residents")
+      .select("id, first_name, last_name")
+      .in("id", authorizerIds);
+    for (const a of arr ?? []) {
+      authorizers.set(a.id, `${a.last_name}, ${a.first_name}`);
     }
   }
 
@@ -117,7 +132,7 @@ export default async function ResidentsPage({
               <th className="px-4 py-3">Categoría</th>
               <th className="px-4 py-3">Apellido y Nombre</th>
               <th className="px-4 py-3">DNI</th>
-              <th className="px-4 py-3">Unidad</th>
+              <th className="px-4 py-3">Unidad / Autorizado por</th>
               <th className="px-4 py-3">Cuenta</th>
               <th className="px-4 py-3">Estado</th>
               <th className="px-4 py-3 text-right">Acciones</th>
@@ -133,7 +148,17 @@ export default async function ResidentsPage({
                   </td>
                   <td className="px-4 py-3 font-medium">{r.last_name}, {r.first_name}</td>
                   <td className="px-4 py-3 tabular-nums">{formatDni(r.dni)}</td>
-                  <td className="px-4 py-3 text-zinc-400">{r.unit ?? "—"}</td>
+                  <td className="px-4 py-3 text-zinc-400">
+                    {r.unit ? (
+                      <span>{r.unit}</span>
+                    ) : r.authorized_by_resident_id ? (
+                      <span className="text-xs text-sky-300">
+                        🔗 {authorizers.get(r.authorized_by_resident_id) ?? "Residente"}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-zinc-400">
                     {email ? (
                       <span className="text-emerald-400">{email}</span>
