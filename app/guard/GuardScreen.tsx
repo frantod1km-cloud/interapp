@@ -1,44 +1,130 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { formatDni } from "@/lib/dni/parse";
-import { scanAction, registerAccessAction, type ScanResponse } from "./actions";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { formatDni, parseDni } from "@/lib/dni/parse";
 import type { LookupResult } from "@/lib/access/lookup";
+import {
+  enqueue,
+  listQueue,
+  loadSnapshot,
+  removeFromQueue,
+  saveSnapshot,
+  type QueuedEvent,
+  type Snapshot,
+} from "@/lib/offline/db";
+import { lookupDniOffline } from "@/lib/offline/lookup";
 
 type Screen =
   | { kind: "idle" }
   | { kind: "checking"; raw: string }
-  | { kind: "result"; result: LookupResult; scannedName?: string }
+  | { kind: "result"; result: LookupResult; scannedName?: string; offline: boolean }
   | { kind: "confirmed"; message: string }
   | { kind: "error"; message: string };
 
-const RESULT_TIMEOUT_MS = 30_000; // si el guardia no decide en 30s, vuelve a idle
+const RESULT_TIMEOUT_MS = 30_000;
 const CONFIRMED_TIMEOUT_MS = 1500;
+const SNAPSHOT_REFRESH_MS = 5 * 60_000; // refrescar padrón cada 5 minutos si hay net
+
+function uuid() {
+  return crypto.randomUUID();
+}
 
 export default function GuardScreen({ orgName }: { orgName: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [screen, setScreen] = useState<Screen>({ kind: "idle" });
-  const [isPending, startTransition] = useTransition();
+  const [busy, setBusy] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [queueSize, setQueueSize] = useState(0);
+  const [snapshotAge, setSnapshotAge] = useState<string | null>(null);
 
-  // Mantener focus permanente en el input
+  // --- focus permanente ---
   const refocus = useCallback(() => {
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
   useEffect(() => {
+    setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
     refocus();
     const onClick = () => refocus();
     const onVisibility = () => refocus();
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
     window.addEventListener("click", onClick);
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
     return () => {
       window.removeEventListener("click", onClick);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
     };
   }, [refocus]);
 
-  // Auto-volver a idle si pasa mucho tiempo en confirmed/result sin acción
+  // --- SW + snapshot inicial + refresh periódico ---
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+
+    const refreshSnapshot = async () => {
+      try {
+        const resp = await fetch("/api/guard/snapshot", { cache: "no-store" });
+        if (!resp.ok) return;
+        const snap = (await resp.json()) as Snapshot;
+        await saveSnapshot(snap);
+        setSnapshotAge(snap.fetched_at);
+      } catch {
+        // ignoramos errores de red, mantenemos snapshot viejo
+      }
+    };
+
+    const loadInitial = async () => {
+      const existing = await loadSnapshot();
+      if (existing) setSnapshotAge(existing.fetched_at);
+      const q = await listQueue();
+      setQueueSize(q.length);
+    };
+
+    loadInitial();
+    refreshSnapshot();
+    const t = setInterval(refreshSnapshot, SNAPSHOT_REFRESH_MS);
+    return () => clearInterval(t);
+  }, []);
+
+  // --- flush automático cuando vuelve internet ---
+  const flushQueue = useCallback(async () => {
+    const q = await listQueue();
+    if (q.length === 0) {
+      setQueueSize(0);
+      return;
+    }
+    try {
+      const resp = await fetch("/api/guard/events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ events: q }),
+      });
+      if (!resp.ok) return;
+      const { confirmed } = (await resp.json()) as { confirmed: string[] };
+      await Promise.all(confirmed.map(removeFromQueue));
+      const remaining = await listQueue();
+      setQueueSize(remaining.length);
+    } catch {
+      // sigue offline, reintentamos después
+    }
+  }, []);
+
+  useEffect(() => {
+    if (online) flushQueue();
+    const t = setInterval(() => {
+      if (navigator.onLine) flushQueue();
+    }, 15_000);
+    return () => clearInterval(t);
+  }, [online, flushQueue]);
+
+  // --- auto vuelta a idle ---
   useEffect(() => {
     if (screen.kind === "confirmed") {
       const t = setTimeout(() => {
@@ -56,24 +142,57 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
     }
   }, [screen, refocus]);
 
-  const submit = (raw: string) => {
-    if (!raw.trim()) return;
+  // --- scan ---
+  const submit = async (raw: string) => {
+    if (!raw.trim() || busy) return;
     setValue("");
+    setBusy(true);
     setScreen({ kind: "checking", raw });
-    startTransition(async () => {
-      const resp: ScanResponse = await scanAction(raw);
-      if (!resp.ok) {
-        setScreen({ kind: "error", message: resp.error });
-        refocus();
-        return;
-      }
-      const scannedName =
-        resp.parsed.firstName && resp.parsed.lastName
-          ? `${resp.parsed.firstName} ${resp.parsed.lastName}`
-          : undefined;
-      setScreen({ kind: "result", result: resp.result, scannedName });
+
+    const parsed = parseDni(raw);
+    if (!parsed) {
+      setScreen({ kind: "error", message: "No se pudo leer el DNI." });
+      setBusy(false);
       refocus();
-    });
+      return;
+    }
+    const scannedName =
+      parsed.firstName && parsed.lastName ? `${parsed.firstName} ${parsed.lastName}` : undefined;
+
+    // Si hay internet: query al server (datos siempre frescos)
+    if (navigator.onLine) {
+      try {
+        const resp = await fetch(
+          `/api/guard/lookup?dni=${encodeURIComponent(parsed.dni)}`,
+          { cache: "no-store" },
+        );
+        if (resp.ok) {
+          const result = (await resp.json()) as LookupResult;
+          setScreen({ kind: "result", result, scannedName, offline: false });
+          setBusy(false);
+          refocus();
+          return;
+        }
+      } catch {
+        // cae al fallback offline
+      }
+    }
+
+    // Offline o fallo de red: lookup contra snapshot local
+    const snap = await loadSnapshot();
+    if (!snap) {
+      setScreen({
+        kind: "error",
+        message: "Sin conexión y sin padrón cacheado. Conectate al menos una vez para descargarlo.",
+      });
+      setBusy(false);
+      refocus();
+      return;
+    }
+    const result = lookupDniOffline(snap, parsed.dni);
+    setScreen({ kind: "result", result, scannedName, offline: true });
+    setBusy(false);
+    refocus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -83,47 +202,56 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
     }
   };
 
-  const register = (opts: {
+  // --- registro de evento ---
+  const register = async (opts: {
     result: "authorized" | "forced" | "manual";
     reason?: string;
   }) => {
-    if (screen.kind !== "result") return;
+    if (screen.kind !== "result" || busy) return;
+    setBusy(true);
     const r = screen.result;
     const fullName =
       r.state === "authorized" || r.state === "expired"
         ? r.fullName ?? screen.scannedName
         : screen.scannedName;
 
-    startTransition(async () => {
-      const resp = await registerAccessAction({
-        dni: r.dni,
-        fullName,
-        direction: "in",
-        result: opts.result,
-        reason: opts.reason,
-        authorizationId:
-          (r.state === "authorized" && r.kind === "authorization" && r.authorizationId) ||
-          (r.state === "expired" && r.authorizationId) ||
-          undefined,
-        residentId:
-          (r.state === "authorized" && r.kind === "resident" && r.residentId) || undefined,
-      });
-      if (!resp.ok) {
-        setScreen({ kind: "error", message: resp.error || "Error registrando ingreso." });
-        return;
-      }
-      const time = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-      setScreen({ kind: "confirmed", message: `Ingreso registrado · ${time}` });
+    const event: QueuedEvent = {
+      client_id: uuid(),
+      dni: r.dni,
+      full_name: fullName ?? null,
+      direction: "in",
+      result: opts.result,
+      reason: opts.reason ?? null,
+      authorization_id:
+        (r.state === "authorized" && r.kind === "authorization" && r.authorizationId) ||
+        (r.state === "expired" && r.authorizationId) ||
+        null,
+      resident_id:
+        (r.state === "authorized" && r.kind === "resident" && r.residentId) || null,
+      occurred_at: new Date().toISOString(),
+    };
+
+    // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
+    await enqueue(event);
+    setQueueSize((n) => n + 1);
+
+    if (navigator.onLine) {
+      await flushQueue();
+    }
+
+    const time = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    setScreen({
+      kind: "confirmed",
+      message: navigator.onLine ? `Ingreso registrado · ${time}` : `Guardado (offline) · ${time}`,
     });
+    setBusy(false);
   };
 
   const bgClass =
     screen.kind === "result"
       ? screen.result.state === "authorized"
         ? "bg-emerald-600"
-        : screen.result.state === "expired"
-          ? "bg-amber-500"
-          : "bg-amber-500"
+        : "bg-amber-500"
       : screen.kind === "confirmed"
         ? "bg-emerald-700"
         : screen.kind === "error"
@@ -132,7 +260,6 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
 
   return (
     <main className={`min-h-screen transition-colors duration-150 ${bgClass} text-white`}>
-      {/* Input invisible siempre con focus */}
       <input
         ref={inputRef}
         type="text"
@@ -147,20 +274,33 @@ export default function GuardScreen({ orgName }: { orgName: string }) {
         aria-label="Escaneá el DNI"
       />
 
-      <header className="flex items-center justify-between px-6 py-4 bg-black/30">
+      <header className="flex items-center justify-between px-6 py-3 bg-black/30 text-sm">
         <div className="font-semibold">{orgName}</div>
-        <div className="text-sm opacity-70">Control de Acceso</div>
+        <div className="flex items-center gap-3 opacity-80">
+          {!online && <span className="bg-amber-500 text-black px-2 py-0.5 rounded text-xs font-bold">SIN CONEXIÓN</span>}
+          {queueSize > 0 && (
+            <span className="bg-zinc-800 px-2 py-0.5 rounded text-xs">
+              {queueSize} en cola
+            </span>
+          )}
+          {snapshotAge && (
+            <span className="text-xs opacity-60">
+              Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
       </header>
 
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-72px)] px-6 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] px-6 text-center">
         {screen.kind === "idle" && <IdleView />}
         {screen.kind === "checking" && <CheckingView raw={screen.raw} />}
         {screen.kind === "result" && (
           <ResultView
             result={screen.result}
             scannedName={screen.scannedName}
+            offline={screen.offline}
             onRegister={register}
-            isPending={isPending}
+            busy={busy}
           />
         )}
         {screen.kind === "confirmed" && <ConfirmedView message={screen.message} />}
@@ -201,13 +341,15 @@ function CheckingView({ raw }: { raw: string }) {
 function ResultView({
   result,
   scannedName,
+  offline,
   onRegister,
-  isPending,
+  busy,
 }: {
   result: LookupResult;
   scannedName?: string;
+  offline: boolean;
   onRegister: (opts: { result: "authorized" | "forced" | "manual"; reason?: string }) => void;
-  isPending: boolean;
+  busy: boolean;
 }) {
   const dniDisplay = formatDni(result.dni);
 
@@ -218,19 +360,19 @@ function ResultView({
         <h1 className="text-5xl font-bold mb-2">AUTORIZADO</h1>
         <p className="text-3xl font-semibold mb-1">{result.fullName}</p>
         <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
-        <p className="text-lg opacity-80 mb-8">{result.detail}</p>
+        <p className="text-lg opacity-80 mb-6">{result.detail}</p>
+        {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
         <button
           onClick={() => onRegister({ result: "authorized" })}
-          disabled={isPending}
+          disabled={busy}
           className="bg-white text-emerald-700 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
         >
-          {isPending ? "Registrando…" : "Registrar ingreso"}
+          {busy ? "Registrando…" : "Registrar ingreso"}
         </button>
       </div>
     );
   }
 
-  // expired o unknown → amarillo, opciones para forzar o cancelar
   const headline = result.state === "expired" ? "AUTORIZACIÓN VENCIDA" : "DNI NO REGISTRADO";
   return (
     <div className="max-w-2xl">
@@ -242,18 +384,19 @@ function ResultView({
         </p>
       ) : null}
       <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
-      <p className="text-lg opacity-80 mb-8">{result.detail}</p>
+      <p className="text-lg opacity-80 mb-6">{result.detail}</p>
+      {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
         <button
           onClick={() => onRegister({ result: "forced", reason: "Forzado por guardia" })}
-          disabled={isPending}
+          disabled={busy}
           className="bg-white text-amber-700 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
           Forzar ingreso
         </button>
         <button
           onClick={() => onRegister({ result: "manual", reason: "Rechazado" })}
-          disabled={isPending}
+          disabled={busy}
           className="bg-rose-700 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
           Rechazar
