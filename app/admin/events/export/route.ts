@@ -38,21 +38,35 @@ export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: events } = await supabase
     .from("access_events")
-    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate")
+    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate, companions, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", from.toISOString())
     .lte("occurred_at", to.toISOString())
     .order("occurred_at", { ascending: false });
 
-  const header = ["fecha_hora", "dni", "nombre", "sentido", "resultado", "motivo", "patente"];
+  const header = [
+    "fecha_hora",
+    "dni",
+    "nombre",
+    "sentido",
+    "resultado",
+    "patente",
+    "acompañantes",
+    "nota",
+    "motivo",
+    "garita",
+  ];
   const rows = (events ?? []).map((e) => [
     new Date(e.occurred_at).toLocaleString("es-AR"),
     e.dni,
     e.full_name,
     e.direction === "in" ? "entrada" : "salida",
     e.result,
-    e.reason,
     e.vehicle_plate,
+    String(e.companions ?? 0),
+    e.notes,
+    e.reason,
+    e.gate_label,
   ]);
 
   const csv = [header, ...rows]

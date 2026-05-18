@@ -71,6 +71,8 @@ export type QueuedEvent = {
   gate_id: string | null;
   gate_label: string | null;
   vehicle_plate: string | null;
+  companions: number;         // 0 = solo el titular; N = N personas más
+  notes: string | null;       // texto libre opcional
 };
 
 function openDb(): Promise<IDBDatabase> {

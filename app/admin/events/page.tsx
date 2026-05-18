@@ -38,7 +38,7 @@ export default async function EventsPage({
 
   let query = supabase
     .from("access_events")
-    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate")
+    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, companions, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", range.from.toISOString())
     .lte("occurred_at", range.to.toISOString())
@@ -98,15 +98,17 @@ export default async function EventsPage({
               <th className="px-4 py-3">DNI</th>
               <th className="px-4 py-3">Sentido</th>
               <th className="px-4 py-3">Resultado</th>
-              <th className="px-4 py-3">Motivo</th>
+              <th className="px-4 py-3">Patente</th>
+              <th className="px-4 py-3">+ pers.</th>
+              <th className="px-4 py-3">Nota / Motivo</th>
             </tr>
           </thead>
           <tbody>
             {(events ?? []).map((e) => {
               const r = RESULT_LABEL[e.result] ?? { label: e.result, className: "" };
               return (
-                <tr key={e.id} className="border-t border-zinc-800">
-                  <td className="px-4 py-3 tabular-nums text-zinc-400">
+                <tr key={e.id} className="border-t border-zinc-800 align-top">
+                  <td className="px-4 py-3 tabular-nums text-zinc-400 whitespace-nowrap">
                     {new Date(e.occurred_at).toLocaleString("es-AR", {
                       day: "2-digit",
                       month: "2-digit",
@@ -124,13 +126,28 @@ export default async function EventsPage({
                     )}
                   </td>
                   <td className={`px-4 py-3 font-medium ${r.className}`}>{r.label}</td>
-                  <td className="px-4 py-3 text-zinc-400">{e.reason ?? ""}</td>
+                  <td className="px-4 py-3 font-mono text-zinc-400">
+                    {e.vehicle_plate ?? <span className="text-zinc-600">🚶</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center tabular-nums">
+                    {e.companions > 0 ? (
+                      <span className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded text-xs font-bold">
+                        +{e.companions}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-400 text-xs max-w-xs">
+                    {e.notes && <div className="text-zinc-300">{e.notes}</div>}
+                    {e.reason && <div className="text-zinc-500 italic">{e.reason}</div>}
+                  </td>
                 </tr>
               );
             })}
             {(!events || events.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-zinc-400">
                   Sin eventos en este rango.
                 </td>
               </tr>

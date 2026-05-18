@@ -56,6 +56,8 @@ export default function GuardScreen({
   const [showSearch, setShowSearch] = useState(false);
   const [selectedPlate, setSelectedPlate] = useState<string>("");
   const [customPlate, setCustomPlate] = useState<string>("");
+  const [companions, setCompanions] = useState<number>(0);
+  const [notes, setNotes] = useState<string>("");
 
   const currentGate = gates.find((g) => g.id === gateId) ?? null;
 
@@ -176,15 +178,19 @@ export default function GuardScreen({
     return () => clearInterval(t);
   }, [online, flushQueue]);
 
-  // --- al cambiar de resultado, resetear selección de patente ---
+  // --- al cambiar de resultado, resetear selección de patente y extras ---
   useEffect(() => {
     if (screen.kind === "result" && screen.result.state === "authorized") {
       const vs = screen.result.vehicles ?? [];
       setSelectedPlate(vs.length === 1 ? vs[0].plate : "");
       setCustomPlate("");
+      setCompanions(0);
+      setNotes("");
     } else if (screen.kind !== "result") {
       setSelectedPlate("");
       setCustomPlate("");
+      setCompanions(0);
+      setNotes("");
     }
   }, [screen]);
 
@@ -309,6 +315,8 @@ export default function GuardScreen({
       gate_id: gateId,
       gate_label: currentGate?.name ?? null,
       vehicle_plate: effectivePlate || null,
+      companions: companions || 0,
+      notes: notes.trim() || null,
     };
 
     // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
@@ -496,6 +504,10 @@ export default function GuardScreen({
             setSelectedPlate={setSelectedPlate}
             customPlate={customPlate}
             setCustomPlate={setCustomPlate}
+            companions={companions}
+            setCompanions={setCompanions}
+            notes={notes}
+            setNotes={setNotes}
           />
         )}
         {screen.kind === "confirmed" && <ConfirmedView message={screen.message} />}
@@ -618,6 +630,10 @@ function ResultView({
   setSelectedPlate,
   customPlate,
   setCustomPlate,
+  companions,
+  setCompanions,
+  notes,
+  setNotes,
 }: {
   result: LookupResult;
   scannedName?: string;
@@ -629,6 +645,10 @@ function ResultView({
   setSelectedPlate: (s: string) => void;
   customPlate: string;
   setCustomPlate: (s: string) => void;
+  companions: number;
+  setCompanions: (n: number) => void;
+  notes: string;
+  setNotes: (s: string) => void;
 }) {
   const dniDisplay = formatDni(result.dni);
   const actionLabel = direction === "in" ? "Registrar entrada" : "Registrar salida";
@@ -756,6 +776,51 @@ function ResultView({
           </div>
         )}
         {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
+
+        {/* Acompañantes + Nota: detalles opcionales del ingreso */}
+        <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs uppercase tracking-wider opacity-80">Acompañantes</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCompanions(Math.max(0, companions - 1))}
+                disabled={companions === 0}
+                className="w-8 h-8 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold text-lg disabled:opacity-30"
+              >
+                −
+              </button>
+              <span className="font-bold text-lg w-8 text-center tabular-nums">{companions}</span>
+              <button
+                type="button"
+                onClick={() => setCompanions(companions + 1)}
+                className="w-8 h-8 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold text-lg"
+              >
+                +
+              </button>
+            </div>
+            <span className="text-xs opacity-70">
+              {companions === 0
+                ? "(solo el titular)"
+                : `(${companions + 1} personas en total)`}
+            </span>
+          </div>
+
+          <div className="mt-3">
+            <label className="text-xs uppercase tracking-wider opacity-80">
+              Nota (opcional)
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={200}
+              placeholder='Ej: "trae mudanza", "se queda a dormir", "viene en moto"'
+              className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+            />
+          </div>
+        </div>
+
         <div>
           <button
             onClick={() => onRegister({ result: "authorized" })}

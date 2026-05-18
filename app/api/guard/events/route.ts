@@ -24,6 +24,9 @@ type IncomingEvent = {
   occurred_at: string;
   gate_id?: string | null;
   gate_label?: string | null;
+  vehicle_plate?: string | null;
+  companions?: number;
+  notes?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
   if (!org) return NextResponse.json({ error: "no_org" }, { status: 404 });
 
   const role = await getCurrentMemberRole(org.id);
-  if (role !== "guard" && role !== "org_admin") {
+  if (role !== "guard" && role !== "guard_lead" && role !== "org_admin") {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -59,6 +62,9 @@ export async function POST(req: Request) {
     reason: e.reason,
     gate_id: e.gate_id ?? null,
     gate_label: e.gate_label ?? null,
+    vehicle_plate: e.vehicle_plate ?? null,
+    companions: typeof e.companions === "number" && e.companions >= 0 ? e.companions : 0,
+    notes: e.notes?.trim() || null,
     occurred_at: e.occurred_at,
     synced_at: new Date().toISOString(),
   }));
