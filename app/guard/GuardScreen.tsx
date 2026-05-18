@@ -53,6 +53,7 @@ export default function GuardScreen({
   const [direction, setDirection] = useState<"in" | "out">("in");
   const [gateId, setGateId] = useState<string | null>(null);
   const [showGatePicker, setShowGatePicker] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const currentGate = gates.find((g) => g.id === gateId) ?? null;
 
@@ -354,6 +355,19 @@ export default function GuardScreen({
         </div>
       )}
 
+      {showSearch && (
+        <SearchPanel
+          onClose={() => {
+            setShowSearch(false);
+            refocus();
+          }}
+          onPick={(dni) => {
+            setShowSearch(false);
+            submit(dni);
+          }}
+        />
+      )}
+
       <header className={`flex items-center justify-between px-6 py-3 text-sm gap-3 flex-wrap ${
         isColored ? "bg-black/30" : "bg-zinc-50 border-b border-zinc-200"
       }`}>
@@ -411,6 +425,17 @@ export default function GuardScreen({
               Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setShowSearch(true)}
+            className={`text-xs flex items-center gap-1 ${
+              isColored
+                ? "opacity-60 hover:opacity-100"
+                : "px-3 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
+            }`}
+          >
+            🔍 Buscar
+          </button>
           <a href="/guard/package" className="text-xs opacity-60 hover:opacity-100">
             📦 Paquetes
           </a>
@@ -740,6 +765,140 @@ function ErrorView({ message, onDismiss }: { message: string; onDismiss: () => v
       >
         Reintentar
       </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SearchPanel — Modal para buscar personas por nombre o DNI parcial cuando
+// el escáner no sirve (DNI roto, extranjero, querer ver ficha sin tener a la
+// persona presente).
+// ---------------------------------------------------------------------------
+type SearchResult = {
+  kind: "resident" | "authorization";
+  dni: string;
+  name: string;
+  detail: string;
+  residentKind?: string;
+};
+
+function SearchPanel({
+  onClose,
+  onPick,
+}: {
+  onClose: () => void;
+  onPick: (dni: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (q.trim().length < 2) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/guard/search?q=${encodeURIComponent(q.trim())}`, {
+          cache: "no-store",
+        });
+        if (r.ok) {
+          const data = await r.json();
+          setResults(data.results ?? []);
+        } else {
+          setResults([]);
+        }
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 200);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [q]);
+
+  const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") onClose();
+    if (e.key === "Enter" && results.length === 1) {
+      e.preventDefault();
+      onPick(results[0].dni);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 sm:p-12"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white border border-zinc-200 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="p-4 border-b border-zinc-200 flex items-center gap-3">
+          <span className="text-xl">🔍</span>
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={onKey}
+            placeholder="Buscar por nombre, apellido, DNI o lote…"
+            autoFocus
+            autoComplete="off"
+            className="flex-1 outline-none text-lg bg-transparent text-zinc-900 placeholder:text-zinc-400"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-zinc-500 hover:text-zinc-900 text-sm px-2"
+            aria-label="Cerrar"
+          >
+            ✕ Esc
+          </button>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto">
+          {q.trim().length < 2 && (
+            <p className="p-6 text-center text-zinc-500 text-sm">
+              Tipeá al menos 2 caracteres. Podés buscar por nombre, apellido, DNI parcial o lote.
+            </p>
+          )}
+          {loading && q.trim().length >= 2 && (
+            <p className="p-6 text-center text-zinc-500 text-sm">Buscando…</p>
+          )}
+          {!loading && q.trim().length >= 2 && results.length === 0 && (
+            <p className="p-6 text-center text-zinc-500 text-sm">Sin resultados.</p>
+          )}
+          {results.map((r) => {
+            const km = r.residentKind ? kindMeta(r.residentKind) : null;
+            return (
+              <button
+                key={`${r.kind}-${r.dni}-${r.name}`}
+                type="button"
+                onClick={() => onPick(r.dni)}
+                className="w-full text-left p-4 border-b border-zinc-100 last:border-0 hover:bg-blue-50 transition flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-xl flex-shrink-0">
+                  {km ? km.emoji : r.kind === "authorization" ? "✋" : "👤"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-zinc-900">{r.name}</div>
+                  <div className="text-sm text-zinc-600">
+                    DNI {formatDni(r.dni)} · {r.detail}
+                  </div>
+                </div>
+                <span className="text-blue-600 text-sm font-medium">Ver ficha →</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
