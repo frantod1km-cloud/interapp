@@ -23,7 +23,7 @@ type Screen =
   | { kind: "confirmed"; message: string }
   | { kind: "error"; message: string };
 
-const RESULT_TIMEOUT_MS = 30_000;
+const RESULT_TIMEOUT_MS = 5 * 60_000; // 5 minutos de inactividad
 const CONFIRMED_TIMEOUT_MS = 1500;
 const SNAPSHOT_REFRESH_MS = 5 * 60_000; // refrescar padrón cada 5 minutos si hay net
 
@@ -216,6 +216,10 @@ export default function GuardScreen({
   }, [selectedPlate, companionList.length]);
 
   // --- auto vuelta a idle ---
+  // El timer del estado "result" se reinicia cada vez que el guardia
+  // toca cualquier control (cambia patente, agrega acompañante, tipea
+  // notas, etc.). Si hace 5 min sin actividad, vuelve a idle.
+  // El estado "confirmed" sí se cierra solo a los 1.5s (es transitorio).
   useEffect(() => {
     if (screen.kind === "confirmed") {
       const t = setTimeout(() => {
@@ -231,7 +235,20 @@ export default function GuardScreen({
       }, RESULT_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
-  }, [screen, refocus]);
+    // El timer se reinicia (al re-correr el effect) cuando el usuario
+    // modifica cualquiera de estos valores del panel:
+  }, [
+    screen,
+    refocus,
+    selectedPlate,
+    customPlate,
+    customMake,
+    customModel,
+    customColor,
+    companionList.length,
+    notes,
+    visitorName,
+  ]);
 
   // --- scan ---
   const submit = async (raw: string) => {
