@@ -75,9 +75,26 @@ export async function addOwnVehicleAction(formData: FormData): Promise<void> {
 
   if (!plate || plate.length < 4) fail("/resident/profile", "Patente inválida");
 
-  // Usamos admin client para evitar problemas de RLS si la org tiene otras
-  // policies que choquen. Filtramos por residentId que sí es el del usuario.
+  // Chequear si la patente ya existe en la org (constraint unique
+  // organization_id+plate). Damos un mensaje claro según el caso.
   const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("vehicles")
+    .select("id, resident_id")
+    .eq("organization_id", orgId)
+    .eq("plate", plate)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.resident_id === residentId) {
+      fail("/resident/profile", `La patente ${plate} ya está cargada a tu nombre.`);
+    }
+    fail(
+      "/resident/profile",
+      `La patente ${plate} ya está registrada en este barrio por otro residente. Si es un error, pedile al admin que la transfiera.`,
+    );
+  }
+
   const { error } = await admin.from("vehicles").insert({
     organization_id: orgId,
     resident_id: residentId,

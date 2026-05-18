@@ -141,6 +141,22 @@ export async function addPersonVehicleAction(formData: FormData): Promise<void> 
   if (!plate || plate.length < 4) fail("Patente inválida");
 
   const supabase = await createClient();
+
+  // Chequear duplicado (constraint unique organization_id+plate)
+  const { data: existing } = await supabase
+    .from("vehicles")
+    .select("id, resident_id")
+    .eq("organization_id", orgId)
+    .eq("plate", plate)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.resident_id === personId) {
+      fail(`La patente ${plate} ya está cargada para esta persona.`);
+    }
+    fail(`La patente ${plate} ya está registrada en este barrio. No podés cargarla dos veces.`);
+  }
+
   const { error } = await supabase.from("vehicles").insert({
     organization_id: orgId,
     resident_id: personId,
