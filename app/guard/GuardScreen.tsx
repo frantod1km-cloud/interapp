@@ -80,7 +80,16 @@ export default function GuardScreen({
   };
 
   // --- focus permanente ---
+  // Ref que indica si hay un modal abierto (gate picker o search). Cuando
+  // hay modal abierto, refocus() no hace nada — así el input del modal
+  // puede recibir el foco normalmente.
+  const modalOpenRef = useRef(false);
+  useEffect(() => {
+    modalOpenRef.current = showGatePicker || showSearch;
+  }, [showGatePicker, showSearch]);
+
   const refocus = useCallback(() => {
+    if (modalOpenRef.current) return;
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
