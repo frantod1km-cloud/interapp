@@ -100,25 +100,25 @@ export default function ReserveForm({
     .slice(0, 10);
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
       <h2 className="font-bold">Reservar</h2>
 
       {/* Space: día + horario */}
       {listing.kind === "space" && (
         <>
           <div>
-            <label className="block text-sm mb-1 text-zinc-700">Día</label>
+            <label className="block text-sm mb-1 text-zinc-400">Día</label>
             <input
               type="date"
               value={date}
               min={today}
               max={maxDate}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
           </div>
           <div>
-            <label className="block text-sm mb-1 text-zinc-700">
+            <label className="block text-sm mb-1 text-zinc-400">
               Horario ({slotMinutes} min por slot)
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -130,10 +130,10 @@ export default function ReserveForm({
                   onClick={() => setHour(s.hour)}
                   className={`py-2 rounded text-sm font-mono ${
                     !s.available
-                      ? "bg-white border border-zinc-200 text-zinc-700 line-through cursor-not-allowed"
+                      ? "bg-zinc-900 border border-zinc-800 text-zinc-400 line-through cursor-not-allowed"
                       : hour === s.hour
-                        ? "bg-emerald-600 text-zinc-900"
-                        : "bg-zinc-100 hover:bg-zinc-200"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-zinc-800 hover:bg-zinc-700"
                   }`}
                 >
                   {String(s.hour).padStart(2, "0")}:00
@@ -141,7 +141,7 @@ export default function ReserveForm({
               ))}
             </div>
             {availableHours.every((s) => !s.available) && (
-              <p className="text-xs text-amber-700 mt-2">
+              <p className="text-xs text-amber-300 mt-2">
                 No hay slots disponibles este día. Elegí otra fecha.
               </p>
             )}
@@ -153,28 +153,28 @@ export default function ReserveForm({
       {listing.kind === "event" && (
         <>
           {listing.event_starts_at && (
-            <div className="bg-white border border-zinc-200 rounded p-3 text-sm">
+            <div className="bg-zinc-900 border border-zinc-800 rounded p-3 text-sm">
               📅 {new Date(listing.event_starts_at).toLocaleString("es-AR")}
             </div>
           )}
           {eventVacancy !== null && (
-            <div className="text-sm text-zinc-700">
+            <div className="text-sm text-zinc-400">
               {eventVacancy > 0 ? (
                 <>🎟️ Vacantes disponibles: <strong>{eventVacancy}</strong></>
               ) : (
-                <span className="text-rose-700">😢 Sin vacantes — agotado</span>
+                <span className="text-rose-300">😢 Sin vacantes — agotado</span>
               )}
             </div>
           )}
           <div>
-            <label className="block text-sm mb-1 text-zinc-700">Cantidad de entradas</label>
+            <label className="block text-sm mb-1 text-zinc-400">Cantidad de entradas</label>
             <input
               type="number"
               min={1}
               max={eventVacancy ?? 10}
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
           </div>
         </>
@@ -182,22 +182,22 @@ export default function ReserveForm({
 
       {/* Membership: nada más que confirmar */}
       {listing.kind === "membership" && (
-        <div className="bg-white border border-zinc-200 rounded p-3 text-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded p-3 text-sm">
           Suscripción con cobro automático. Podés cancelar en cualquier momento desde Mercado
           Pago. (Pronto)
         </div>
       )}
 
-      <div className="border-t border-zinc-200 pt-4 flex items-center justify-between">
+      <div className="border-t border-zinc-800 pt-4 flex items-center justify-between">
         <div>
-          <div className="text-xs text-zinc-700">Total a pagar</div>
-          <div className="text-2xl font-bold text-emerald-700">
+          <div className="text-xs text-zinc-400">Total a pagar</div>
+          <div className="text-2xl font-bold text-emerald-400">
             {formatArs(listing.price_ars * quantity)}
           </div>
         </div>
       </div>
 
-      {error && <p className="text-rose-700 text-sm">{error}</p>}
+      {error && <p className="text-rose-300 text-sm">{error}</p>}
 
       <button
         type="button"
@@ -208,7 +208,7 @@ export default function ReserveForm({
           (listing.kind === "space" && availableHours.find((s) => s.hour === hour)?.available !== true) ||
           (listing.kind === "event" && eventVacancy !== null && eventVacancy < quantity)
         }
-        className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {busy
           ? "Redirigiendo a Mercado Pago…"

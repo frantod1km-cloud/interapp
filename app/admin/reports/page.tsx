@@ -168,7 +168,7 @@ export default async function ReportsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold mb-1">Reportes</h1>
-        <p className="text-zinc-700 text-sm">
+        <p className="text-zinc-400 text-sm">
           Últimos 30 días · {events.length} eventos · {packages.length} paquetes
         </p>
       </div>
@@ -184,7 +184,7 @@ export default async function ReportsPage() {
             </div>
           ))}
         </div>
-        <div className="text-xs text-zinc-700 mt-2 flex justify-between">
+        <div className="text-xs text-zinc-400 mt-2 flex justify-between">
           <span>{dailySeries[0]?.[0]}</span>
           <span>{dailySeries[dailySeries.length - 1]?.[0]}</span>
         </div>
@@ -199,7 +199,7 @@ export default async function ReportsPage() {
                   className="w-full bg-sky-700/40 hover:bg-sky-500 transition rounded-t"
                   style={{ height: `${(c / maxHour) * 100}%` }}
                 />
-                <div className="text-[10px] text-zinc-700">{h}</div>
+                <div className="text-[10px] text-zinc-400">{h}</div>
               </div>
             ))}
           </div>
@@ -209,14 +209,14 @@ export default async function ReportsPage() {
           <div className="space-y-2">
             {byDow.map((c, idx) => (
               <div key={idx} className="flex items-center gap-3 text-sm">
-                <div className="w-12 text-zinc-700">{DAYS_OF_WEEK[idx]}</div>
-                <div className="flex-1 bg-zinc-100 rounded h-5 overflow-hidden">
+                <div className="w-12 text-zinc-400">{DAYS_OF_WEEK[idx]}</div>
+                <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
                   <div
                     className="h-full bg-emerald-500"
                     style={{ width: `${(c / maxDow) * 100}%` }}
                   />
                 </div>
-                <div className="w-10 text-right tabular-nums text-zinc-700">{c}</div>
+                <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
               </div>
             ))}
           </div>
@@ -228,11 +228,11 @@ export default async function ReportsPage() {
               .sort((a, b) => b[1] - a[1])
               .map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between text-sm">
-                  <span className="capitalize text-zinc-700">{k}</span>
+                  <span className="capitalize text-zinc-400">{k}</span>
                   <span className="font-bold tabular-nums">{v}</span>
                 </div>
               ))}
-            {Object.keys(byResult).length === 0 && <p className="text-zinc-700 text-sm">Sin datos</p>}
+            {Object.keys(byResult).length === 0 && <p className="text-zinc-400 text-sm">Sin datos</p>}
           </div>
         </Card>
 
@@ -241,11 +241,11 @@ export default async function ReportsPage() {
             <div className="space-y-2">
               {gates.map(([name, c]) => (
                 <div key={name} className="flex items-center gap-3 text-sm">
-                  <div className="w-24 text-zinc-700 truncate">{name}</div>
-                  <div className="flex-1 bg-zinc-100 rounded h-5 overflow-hidden">
+                  <div className="w-24 text-zinc-400 truncate">{name}</div>
+                  <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
                     <div className="h-full bg-amber-500" style={{ width: `${(c / maxGate) * 100}%` }} />
                   </div>
-                  <div className="w-10 text-right tabular-nums text-zinc-700">{c}</div>
+                  <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
                 </div>
               ))}
             </div>
@@ -255,7 +255,7 @@ export default async function ReportsPage() {
 
       <Card title="Top residentes con más visitas (30 días)">
         {topResidentIds.length === 0 ? (
-          <p className="text-zinc-700 text-sm">Sin visitas autorizadas todavía.</p>
+          <p className="text-zinc-400 text-sm">Sin visitas autorizadas todavía.</p>
         ) : (
           <div className="space-y-2">
             {topResidentIds.map(([id, c]) => {
@@ -264,15 +264,15 @@ export default async function ReportsPage() {
                 <div key={id} className="flex items-center gap-3 text-sm">
                   <div className="w-48 truncate">
                     {r?.name ?? "—"}
-                    {r?.unit && <span className="text-zinc-700 text-xs"> · {r.unit}</span>}
+                    {r?.unit && <span className="text-zinc-400 text-xs"> · {r.unit}</span>}
                   </div>
-                  <div className="flex-1 bg-zinc-100 rounded h-5 overflow-hidden">
+                  <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
                     <div
                       className="h-full bg-sky-500"
                       style={{ width: `${(c / maxTopResident) * 100}%` }}
                     />
                   </div>
-                  <div className="w-10 text-right tabular-nums text-zinc-700">{c}</div>
+                  <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
                 </div>
               );
             })}
@@ -281,24 +281,24 @@ export default async function ReportsPage() {
       </Card>
 
       {/* ===== Paquetería ===== */}
-      <div className="pt-6 border-t border-zinc-200">
+      <div className="pt-6 border-t border-zinc-800">
         <h2 className="text-xl font-bold mb-4">📦 Paquetería (30 días)</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-sky-900/20 border border-sky-700/40 rounded-2xl p-5">
-            <div className="text-zinc-700 text-xs mb-1">Pendientes ahora</div>
+            <div className="text-zinc-400 text-xs mb-1">Pendientes ahora</div>
             <div className="text-3xl font-bold">{pkgByStatus.pending ?? 0}</div>
           </div>
-          <div className="bg-white border border-zinc-200 rounded-2xl p-5">
-            <div className="text-zinc-700 text-xs mb-1">Entregados</div>
-            <div className="text-3xl font-bold text-emerald-700">{pkgByStatus.delivered ?? 0}</div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Entregados</div>
+            <div className="text-3xl font-bold text-emerald-400">{pkgByStatus.delivered ?? 0}</div>
           </div>
-          <div className="bg-white border border-zinc-200 rounded-2xl p-5">
-            <div className="text-zinc-700 text-xs mb-1">Devueltos</div>
-            <div className="text-3xl font-bold text-amber-700">{pkgByStatus.returned ?? 0}</div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Devueltos</div>
+            <div className="text-3xl font-bold text-amber-300">{pkgByStatus.returned ?? 0}</div>
           </div>
-          <div className="bg-white border border-zinc-200 rounded-2xl p-5">
-            <div className="text-zinc-700 text-xs mb-1">Promedio en garita</div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="text-zinc-400 text-xs mb-1">Promedio en garita</div>
             <div className="text-3xl font-bold">
               {avgHours > 0 ? formatHours(avgHours) : "—"}
             </div>
@@ -308,19 +308,19 @@ export default async function ReportsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card title="Top mensajerías">
             {couriersSorted.length === 0 ? (
-              <p className="text-zinc-700 text-sm">Sin paquetes en este período.</p>
+              <p className="text-zinc-400 text-sm">Sin paquetes en este período.</p>
             ) : (
               <div className="space-y-2">
                 {couriersSorted.map(([name, c]) => (
                   <div key={name} className="flex items-center gap-3 text-sm">
-                    <div className="w-32 text-zinc-700 truncate">{name}</div>
-                    <div className="flex-1 bg-zinc-100 rounded h-5 overflow-hidden">
+                    <div className="w-32 text-zinc-400 truncate">{name}</div>
+                    <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
                       <div
                         className="h-full bg-sky-500"
                         style={{ width: `${(c / maxCourier) * 100}%` }}
                       />
                     </div>
-                    <div className="w-10 text-right tabular-nums text-zinc-700">{c}</div>
+                    <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
                   </div>
                 ))}
               </div>
@@ -329,7 +329,7 @@ export default async function ReportsPage() {
 
           <Card title="Top residentes con más paquetes">
             {topPkgResidentIds.length === 0 ? (
-              <p className="text-zinc-700 text-sm">Sin paquetes en este período.</p>
+              <p className="text-zinc-400 text-sm">Sin paquetes en este período.</p>
             ) : (
               <div className="space-y-2">
                 {topPkgResidentIds.map(([id, c]) => {
@@ -338,15 +338,15 @@ export default async function ReportsPage() {
                     <div key={id} className="flex items-center gap-3 text-sm">
                       <div className="w-48 truncate">
                         {r?.name ?? "—"}
-                        {r?.unit && <span className="text-zinc-700 text-xs"> · {r.unit}</span>}
+                        {r?.unit && <span className="text-zinc-400 text-xs"> · {r.unit}</span>}
                       </div>
-                      <div className="flex-1 bg-zinc-100 rounded h-5 overflow-hidden">
+                      <div className="flex-1 bg-zinc-800 rounded h-5 overflow-hidden">
                         <div
                           className="h-full bg-emerald-500"
                           style={{ width: `${(c / maxTopPkgResident) * 100}%` }}
                         />
                       </div>
-                      <div className="w-10 text-right tabular-nums text-zinc-700">{c}</div>
+                      <div className="w-10 text-right tabular-nums text-zinc-400">{c}</div>
                     </div>
                   );
                 })}
@@ -367,7 +367,7 @@ function formatHours(h: number): string {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-6">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
       <h2 className="font-semibold mb-4">{title}</h2>
       {children}
     </div>

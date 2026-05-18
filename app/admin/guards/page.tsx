@@ -44,11 +44,11 @@ export default async function GuardsPage({
   return (
     <div>
       <h1 className="text-2xl font-bold mb-2">Guardias</h1>
-      <p className="text-zinc-700 text-sm mb-6">
+      <p className="text-zinc-400 text-sm mb-6">
         Acá creás las cuentas de guardias y jefes de guardia. El{" "}
         <strong>guardia</strong> solo opera el control de acceso. El{" "}
         <strong>jefe de guardia</strong> además puede crear/dar de baja otros guardias y ver
-        reportes de ingresos forzados desde <code className="bg-white border border-zinc-200 px-1 rounded">/guard/supervision</code>.
+        reportes de ingresos forzados desde <code className="bg-zinc-900 border border-zinc-800 px-1 rounded">/guard/supervision</code>.
       </p>
 
       {sp.created && (
@@ -57,16 +57,16 @@ export default async function GuardsPage({
         </div>
       )}
       {sp.error && (
-        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-700">
+        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-300">
           {decodeURIComponent(sp.error)}
         </div>
       )}
 
       <form
         action={createGuardAction}
-        className="bg-white border border-zinc-200 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-5 gap-3"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-5 gap-3"
       >
-        <select name="role" defaultValue="guard" className="bg-white rounded px-3 py-2 border border-zinc-200">
+        <select name="role" defaultValue="guard" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
           <option value="guard">👮 Guardia</option>
           <option value="guard_lead">⭐ Jefe de guardia</option>
         </select>
@@ -74,14 +74,14 @@ export default async function GuardsPage({
           name="full_name"
           placeholder="Nombre y apellido"
           required
-          className="bg-white rounded px-3 py-2 border border-zinc-200"
+          className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
         />
         <input
           name="email"
           type="email"
           placeholder="Email"
           required
-          className="bg-white rounded px-3 py-2 border border-zinc-200"
+          className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
         />
         <input
           name="password"
@@ -89,19 +89,19 @@ export default async function GuardsPage({
           placeholder="Contraseña (mín. 8)"
           required
           minLength={8}
-          className="bg-white rounded px-3 py-2 border border-zinc-200"
+          className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
         />
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-500 font-semibold rounded px-4 py-2"
+          className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2"
         >
           Crear
         </button>
       </form>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-white text-zinc-700 text-left">
+          <thead className="bg-zinc-950 text-zinc-400 text-left">
             <tr>
               <th className="px-4 py-3">Rol</th>
               <th className="px-4 py-3">Nombre</th>
@@ -112,23 +112,23 @@ export default async function GuardsPage({
           </thead>
           <tbody>
             {guards.map((g) => (
-              <tr key={g.id} className="border-t border-zinc-200">
+              <tr key={g.id} className="border-t border-zinc-800">
                 <td className="px-4 py-3">
                   {g.role === "guard_lead" ? (
-                    <span className="text-amber-700 text-xs font-bold">⭐ JEFE</span>
+                    <span className="text-amber-300 text-xs font-bold">⭐ JEFE</span>
                   ) : (
-                    <span className="text-zinc-700 text-xs">👮 guardia</span>
+                    <span className="text-zinc-400 text-xs">👮 guardia</span>
                   )}
                 </td>
                 <td className="px-4 py-3 font-medium">{g.name || "—"}</td>
-                <td className="px-4 py-3 text-zinc-700">{g.email}</td>
-                <td className="px-4 py-3 text-zinc-700">
+                <td className="px-4 py-3 text-zinc-400">{g.email}</td>
+                <td className="px-4 py-3 text-zinc-400">
                   {new Date(g.created_at).toLocaleDateString("es-AR")}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <form action={removeGuardAction} className="inline">
                     <input type="hidden" name="member_id" value={g.id} />
-                    <button className="text-xs px-3 py-1 rounded bg-zinc-100 hover:bg-rose-700">
+                    <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-700">
                       Dar de baja
                     </button>
                   </form>
@@ -137,7 +137,7 @@ export default async function GuardsPage({
             ))}
             {guards.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-700">
+                <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
                   Todavía no hay guardias cargados.
                 </td>
               </tr>

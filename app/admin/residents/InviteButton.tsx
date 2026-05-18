@@ -19,7 +19,7 @@ export default function InviteButton({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-zinc-900"
+        className="text-xs px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white"
       >
         Invitar
       </button>
@@ -33,9 +33,9 @@ export default function InviteButton({
         onClick={() => setOpen(false)}
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 w-full max-w-sm">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
           <h3 className="font-bold mb-1">Crear cuenta para {fullName}</h3>
-          <p className="text-sm text-zinc-700 mb-4">
+          <p className="text-sm text-zinc-400 mb-4">
             Pasale estos datos al residente para que se loguee desde su celular.
           </p>
           <form action={inviteResidentAction} className="space-y-3">
@@ -46,7 +46,7 @@ export default function InviteButton({
               placeholder="Email"
               required
               autoFocus
-              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
             <input
               name="password"
@@ -54,19 +54,19 @@ export default function InviteButton({
               placeholder="Contraseña (mín. 8)"
               required
               minLength={8}
-              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex-1 bg-zinc-100 hover:bg-zinc-200 py-2 rounded-lg text-sm"
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2 rounded-lg text-sm"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-500 font-semibold py-2 rounded-lg text-sm"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 font-semibold py-2 rounded-lg text-sm"
               >
                 Crear cuenta
               </button>

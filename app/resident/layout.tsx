@@ -13,26 +13,26 @@ export default async function ResidentLayout({ children }: { children: React.Rea
   if (!role) redirect("/login");
   if (role !== "resident" && role !== "org_admin") {
     return (
-      <main className="min-h-screen flex items-center justify-center p-8 bg-white text-zinc-900">
+      <main className="min-h-screen flex items-center justify-center p-8 bg-zinc-950 text-white">
         <p>Esta sección es para residentes del barrio.</p>
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-zinc-950 text-white">
       <SubscriptionBanner org={org} />
-      <header className="border-b border-zinc-200 px-4 py-3 flex items-center justify-between sm:px-6">
+      <header className="border-b border-zinc-800 px-4 py-3 flex items-center justify-between sm:px-6">
         <div className="font-bold text-sm sm:text-base">{org.name}</div>
-        <nav className="flex gap-3 text-sm text-zinc-700 items-center">
-          <Link href="/resident" className="hover:text-zinc-900">Visitas</Link>
-          <Link href="/resident/people" className="hover:text-zinc-900">Empleados</Link>
-          <Link href="/resident/packages" className="hover:text-zinc-900">📦</Link>
-          <Link href="/resident/marketplace" className="hover:text-zinc-900">🛒 Reservas</Link>
-          <Link href="/resident/history" className="hover:text-zinc-900">Historial</Link>
-          <Link href="/resident/profile" className="hover:text-zinc-900">👤 Mi perfil</Link>
+        <nav className="flex gap-3 text-sm text-zinc-400 items-center">
+          <Link href="/resident" className="hover:text-white">Visitas</Link>
+          <Link href="/resident/people" className="hover:text-white">Empleados</Link>
+          <Link href="/resident/packages" className="hover:text-white">📦</Link>
+          <Link href="/resident/marketplace" className="hover:text-white">🛒 Reservas</Link>
+          <Link href="/resident/history" className="hover:text-white">Historial</Link>
+          <Link href="/resident/profile" className="hover:text-white">👤 Mi perfil</Link>
           <form action="/api/logout" method="post">
-            <button className="text-zinc-700 hover:text-zinc-900">Salir</button>
+            <button className="text-zinc-400 hover:text-white">Salir</button>
           </form>
         </nav>
       </header>

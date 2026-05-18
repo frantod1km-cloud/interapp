@@ -73,28 +73,28 @@ export default async function ResidentListingDetailPage({
 
   return (
     <div>
-      <Link href="/resident/marketplace" className="text-sm text-zinc-700 hover:text-zinc-700 inline-block mb-4">
+      <Link href="/resident/marketplace" className="text-sm text-zinc-400 hover:text-zinc-400 inline-block mb-4">
         ← Volver
       </Link>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden mb-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-6">
         {listing.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={listing.photo_url} alt="" className="w-full h-48 object-cover bg-zinc-100" />
+          <img src={listing.photo_url} alt="" className="w-full h-48 object-cover bg-zinc-800" />
         ) : (
-          <div className="w-full h-48 bg-zinc-100 flex items-center justify-center text-7xl">
+          <div className="w-full h-48 bg-zinc-800 flex items-center justify-center text-7xl">
             {meta.emoji}
           </div>
         )}
         <div className="p-5">
-          <div className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 inline-block mb-2">
+          <div className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 inline-block mb-2">
             {meta.emoji} {meta.label}
           </div>
           <h1 className="text-2xl font-bold mb-2">{listing.name}</h1>
           {listing.description && (
-            <p className="text-zinc-700 text-sm mb-4 whitespace-pre-wrap">{listing.description}</p>
+            <p className="text-zinc-400 text-sm mb-4 whitespace-pre-wrap">{listing.description}</p>
           )}
-          <div className="text-2xl font-bold text-emerald-700">{formatArs(listing.price_ars)}</div>
+          <div className="text-2xl font-bold text-emerald-400">{formatArs(listing.price_ars)}</div>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default async function ResidentListingDetailPage({
       )}
 
       {sp.error && (
-        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-700">
+        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-300">
           {decodeURIComponent(sp.error)}
         </div>
       )}

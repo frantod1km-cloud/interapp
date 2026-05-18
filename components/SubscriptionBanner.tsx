@@ -21,13 +21,13 @@ export function SubscriptionBanner({ org }: { org: Organization }) {
             msg: "Tu cuenta está suspendida por falta de pago. El control de accesos sigue operativo pero no podés modificar datos.",
           }
         : {
-            bg: "bg-zinc-200",
+            bg: "bg-zinc-700",
             title: "Estado de la suscripción",
             msg: `Estado actual: ${org.status}`,
           };
 
   return (
-    <div className={`${config.bg} text-zinc-900 px-6 py-3 text-sm flex items-center justify-between`}>
+    <div className={`${config.bg} text-white px-6 py-3 text-sm flex items-center justify-between`}>
       <div>
         <strong>{config.title}.</strong> {config.msg}
       </div>

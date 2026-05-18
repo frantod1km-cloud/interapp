@@ -32,7 +32,7 @@ export default function LoginForm() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white text-zinc-900 p-6">
+    <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-white p-6">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-bold mb-4">Iniciar sesión</h1>
         {isWelcome && (
@@ -41,37 +41,37 @@ export default function LoginForm() {
           </div>
         )}
         <div>
-          <label className="block text-sm mb-1 text-zinc-700">Email</label>
+          <label className="block text-sm mb-1 text-zinc-400">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoFocus
-            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
           />
         </div>
         <div>
-          <label className="block text-sm mb-1 text-zinc-700">Contraseña</label>
+          <label className="block text-sm mb-1 text-zinc-400">Contraseña</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
           />
         </div>
-        {error && <p className="text-rose-700 text-sm">{error}</p>}
+        {error && <p className="text-rose-300 text-sm">{error}</p>}
         <button
           type="submit"
           disabled={isPending}
-          className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 rounded-lg disabled:opacity-50"
+          className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-lg disabled:opacity-50"
         >
           {isPending ? "Entrando…" : "Entrar"}
         </button>
-        <p className="text-center text-xs text-zinc-700">
+        <p className="text-center text-xs text-zinc-400">
           ¿No tenés cuenta?{" "}
-          <Link href="/" className="text-zinc-700 hover:text-zinc-900">
+          <Link href="/" className="text-zinc-400 hover:text-white">
             Pedile acceso al admin de tu barrio
           </Link>
         </p>

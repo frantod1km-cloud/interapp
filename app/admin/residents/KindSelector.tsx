@@ -28,7 +28,7 @@ export default function KindSelector({
         className={`bg-transparent border rounded px-2 py-1 text-xs ${meta.className}`}
       >
         {RESIDENT_KINDS.map((opt) => (
-          <option key={opt.id} value={opt.id} className="bg-white border border-zinc-200">
+          <option key={opt.id} value={opt.id} className="bg-zinc-900 border border-zinc-800">
             {opt.emoji} {opt.short}
           </option>
         ))}

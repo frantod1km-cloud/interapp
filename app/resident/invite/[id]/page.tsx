@@ -31,16 +31,16 @@ export default async function InviteDetailPage({
 
   return (
     <div>
-      <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 mb-4 inline-block">
+      <Link href="/resident" className="text-sm text-zinc-400 hover:text-zinc-400 mb-4 inline-block">
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-2">Link de invitación</h1>
       {auth.claimed_at ? (
-        <p className="text-sm text-emerald-700 mb-6">
+        <p className="text-sm text-emerald-400 mb-6">
           Ya fue usado por {auth.visitor_name ?? "el invitado"}.
         </p>
       ) : (
-        <p className="text-sm text-zinc-700 mb-6">
+        <p className="text-sm text-zinc-400 mb-6">
           Compartile este link al invitado. Caduca el{" "}
           {new Date(auth.valid_until).toLocaleString("es-AR")}.
         </p>

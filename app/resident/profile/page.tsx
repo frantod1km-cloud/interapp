@@ -31,7 +31,7 @@ export default async function ResidentProfilePage({
   if (!resident) {
     return (
       <div>
-        <p className="text-zinc-600 text-sm">
+        <p className="text-zinc-400 text-sm">
           No estás asociado como residente en este barrio. Pedile a la administración que te
           dé de alta.
         </p>
@@ -51,36 +51,36 @@ export default async function ResidentProfilePage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-1">Mi perfil</h1>
-        <p className="text-zinc-600 text-sm">
+        <p className="text-zinc-400 text-sm">
           Datos personales que ve la administración del barrio y el guardia.
         </p>
       </div>
 
       {sp.saved && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 text-sm">
+        <div className="bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 rounded-2xl p-4 text-sm">
           ✅ Cambios guardados.
         </div>
       )}
       {sp.vehicle_added && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 text-sm">
+        <div className="bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 rounded-2xl p-4 text-sm">
           ✅ Vehículo agregado.
         </div>
       )}
       {sp.error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl p-4 text-sm">
+        <div className="bg-rose-700/20 border border-rose-700/40 text-rose-300 rounded-2xl p-4 text-sm">
           {decodeURIComponent(sp.error)}
         </div>
       )}
 
       {/* Tarjeta principal de datos */}
-      <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-        <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4">
+      <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className={`text-xs px-2 py-1 rounded border ${km.className}`}>
               {km.emoji} {km.label}
             </div>
             {resident.access_expires_at && (
-              <div className="text-xs px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-900">
+              <div className="text-xs px-2 py-1 rounded bg-amber-600/20 border border-amber-600/40 text-amber-300">
                 Acceso vence el{" "}
                 {new Date(resident.access_expires_at).toLocaleDateString("es-AR")}
               </div>
@@ -89,7 +89,7 @@ export default async function ResidentProfilePage({
           <h2 className="text-xl font-bold mt-2">
             {resident.first_name} {resident.last_name}
           </h2>
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-zinc-400">
             DNI {formatDni(resident.dni)}
             {resident.unit && <> · {resident.unit}</>}
           </p>
@@ -104,12 +104,12 @@ export default async function ResidentProfilePage({
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-zinc-700">Teléfono</label>
+            <label className="block text-sm mb-1 text-zinc-400">Teléfono</label>
             <input
               name="phone"
               defaultValue={resident.phone ?? ""}
               placeholder="11 1234-5678"
-              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
             <p className="text-xs text-zinc-500 mt-1">
               El guardia o admin puede llamarte si necesita confirmar algo.
@@ -118,7 +118,7 @@ export default async function ResidentProfilePage({
 
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-3 rounded-xl"
           >
             Guardar cambios
           </button>
@@ -130,8 +130,8 @@ export default async function ResidentProfilePage({
       </section>
 
       {/* Mis vehículos */}
-      <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-        <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-3 flex items-center justify-between">
+      <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="bg-zinc-950 border-b border-zinc-800 px-6 py-3 flex items-center justify-between">
           <h2 className="font-bold">🚗 Mis vehículos</h2>
           <span className="text-xs text-zinc-500">{vehicles?.length ?? 0}</span>
         </div>
@@ -149,13 +149,13 @@ export default async function ResidentProfilePage({
             >
               <div>
                 <div className="font-mono font-bold text-lg">{v.plate}</div>
-                <div className="text-xs text-zinc-600">
+                <div className="text-xs text-zinc-400">
                   {[v.make, v.model, v.color].filter(Boolean).join(" · ") || "—"}
                 </div>
               </div>
               <form action={removeOwnVehicleAction}>
                 <input type="hidden" name="vehicle_id" value={v.id} />
-                <button className="text-xs px-3 py-1 rounded bg-zinc-100 hover:bg-rose-100 text-zinc-700 hover:text-rose-900">
+                <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-100 text-zinc-400 hover:text-rose-900">
                   Eliminar
                 </button>
               </form>
@@ -165,21 +165,21 @@ export default async function ResidentProfilePage({
 
         <form
           action={addOwnVehicleAction}
-          className="p-4 border-t border-zinc-200 grid grid-cols-1 sm:grid-cols-5 gap-2"
+          className="p-4 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-5 gap-2"
         >
           <input
             name="plate"
             placeholder="Patente"
             required
-            className="bg-white border border-zinc-200 rounded px-3 py-2 uppercase"
+            className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 uppercase"
             style={{ textTransform: "uppercase" }}
           />
-          <input name="make" placeholder="Marca" className="bg-white border border-zinc-200 rounded px-3 py-2" />
-          <input name="model" placeholder="Modelo" className="bg-white border border-zinc-200 rounded px-3 py-2" />
-          <input name="color" placeholder="Color" className="bg-white border border-zinc-200 rounded px-3 py-2" />
+          <input name="make" placeholder="Marca" className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2" />
+          <input name="model" placeholder="Modelo" className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2" />
+          <input name="color" placeholder="Color" className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2" />
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded px-4 py-2"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded px-4 py-2"
           >
             Agregar
           </button>
@@ -187,11 +187,11 @@ export default async function ResidentProfilePage({
       </section>
 
       {/* Seguridad */}
-      <section className="bg-white border border-zinc-200 rounded-2xl p-6">
+      <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
         <h2 className="font-bold mb-3">Seguridad</h2>
         <Link
           href="/resident/profile/password"
-          className="text-blue-600 hover:text-blue-700 text-sm underline"
+          className="text-emerald-400 hover:text-emerald-300 text-sm underline"
         >
           Cambiar contraseña →
         </Link>
@@ -204,7 +204,7 @@ function ReadOnly({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <label className="block text-xs text-zinc-500 mb-1">{label}</label>
-      <div className="bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3 text-sm text-zinc-900">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white">
         {value}
       </div>
     </div>

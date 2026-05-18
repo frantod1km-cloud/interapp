@@ -44,7 +44,7 @@ export default async function ClaimInvitePage({
         <div className="text-center">
           <div className="text-6xl mb-4">✓</div>
           <h1 className="text-2xl font-bold mb-2">Listo</h1>
-          <p className="text-zinc-700">
+          <p className="text-zinc-400">
             Quedaste autorizado. Mostrá tu DNI en la entrada del barrio.
           </p>
         </div>
@@ -58,7 +58,7 @@ export default async function ClaimInvitePage({
         <div className="text-center">
           <div className="text-6xl mb-4">⌛</div>
           <h1 className="text-2xl font-bold mb-2">Invitación vencida</h1>
-          <p className="text-zinc-700">Pedile al residente que te genere uno nuevo.</p>
+          <p className="text-zinc-400">Pedile al residente que te genere uno nuevo.</p>
         </div>
       </Wrap>
     );
@@ -67,35 +67,35 @@ export default async function ClaimInvitePage({
   return (
     <Wrap orgName={orgName}>
       <h1 className="text-2xl font-bold mb-2">Te invitaron a {orgName ?? "un barrio"}</h1>
-      <p className="text-zinc-700 mb-1">
+      <p className="text-zinc-400 mb-1">
         Invitación de {host ? `${host.first_name} ${host.last_name}` : "un residente"}.
       </p>
-      <p className="text-zinc-700 text-sm mb-6">
+      <p className="text-zinc-400 text-sm mb-6">
         Vence el {new Date(auth.valid_until).toLocaleString("es-AR")}.
       </p>
 
       <form action={claimInviteAction} className="space-y-4">
         <input type="hidden" name="token" value={token} />
         <div>
-          <label className="block text-sm mb-1 text-zinc-700">Tu DNI</label>
+          <label className="block text-sm mb-1 text-zinc-400">Tu DNI</label>
           <input
             name="dni"
             inputMode="numeric"
             required
             autoFocus
-            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
           />
         </div>
         <div>
-          <label className="block text-sm mb-1 text-zinc-700">Tu nombre completo</label>
+          <label className="block text-sm mb-1 text-zinc-400">Tu nombre completo</label>
           <input
             name="visitor_name"
             required
-            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
           />
         </div>
-        {sp.error && <p className="text-rose-700 text-sm">{decodeURIComponent(sp.error)}</p>}
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-4 rounded-xl">
+        {sp.error && <p className="text-rose-300 text-sm">{decodeURIComponent(sp.error)}</p>}
+        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-4 rounded-xl">
           Confirmar
         </button>
       </form>
@@ -105,10 +105,10 @@ export default async function ClaimInvitePage({
 
 function Wrap({ orgName, children }: { orgName?: string; children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-white text-zinc-900 p-6 flex items-center justify-center">
+    <main className="min-h-screen bg-zinc-950 text-white p-6 flex items-center justify-center">
       <div className="w-full max-w-md">
         {orgName && (
-          <div className="text-center text-sm text-zinc-700 mb-6">{orgName}</div>
+          <div className="text-center text-sm text-zinc-400 mb-6">{orgName}</div>
         )}
         {children}
       </div>

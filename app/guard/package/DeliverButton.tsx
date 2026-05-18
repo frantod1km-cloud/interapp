@@ -26,7 +26,7 @@ export default function DeliverButton({
       <form action={deliverPackageAction}>
         <input type="hidden" name="package_id" value={packageId} />
         <input type="hidden" name="delivered_to" value={defaultDeliveredTo} />
-        <button className="bg-blue-600 hover:bg-blue-500 font-semibold text-sm px-4 py-2 rounded-lg w-full">
+        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold text-sm px-4 py-2 rounded-lg w-full">
           Entregar
         </button>
       </form>
@@ -46,9 +46,9 @@ export default function DeliverButton({
   }
 
   return (
-    <form action={deliverPackageAction} className="bg-white border border-amber-600/40 rounded-lg p-3 space-y-2 w-56">
+    <form action={deliverPackageAction} className="bg-zinc-950 border border-amber-600/40 rounded-lg p-3 space-y-2 w-56">
       <input type="hidden" name="package_id" value={packageId} />
-      <div className="text-xs text-zinc-700">
+      <div className="text-xs text-zinc-400">
         El residente autorizó a un tercero{pinHolder ? ` (${pinHolder})` : ""}. Pediles el PIN.
       </div>
       <input
@@ -57,17 +57,17 @@ export default function DeliverButton({
         autoFocus
         required
         placeholder="PIN de 6 dígitos"
-        className="w-full bg-white border border-zinc-200 rounded px-3 py-2 text-center font-mono text-lg tracking-widest"
+        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-center font-mono text-lg tracking-widest"
       />
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs bg-zinc-100 hover:bg-zinc-200 py-2 rounded"
+          className="text-xs bg-zinc-800 hover:bg-zinc-700 py-2 rounded"
         >
           Cancelar
         </button>
-        <button className="text-xs bg-blue-600 hover:bg-blue-500 font-semibold py-2 rounded">
+        <button className="text-xs bg-emerald-600 hover:bg-emerald-500 font-semibold py-2 rounded">
           Entregar
         </button>
       </div>

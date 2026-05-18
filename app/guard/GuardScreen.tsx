@@ -312,10 +312,10 @@ export default function GuardScreen({
         ? "bg-emerald-700"
         : screen.kind === "error"
           ? "bg-rose-700"
-          : "bg-white";
+          : "bg-zinc-950";
 
   const isColored = screen.kind !== "idle" && screen.kind !== "checking";
-  const textColor = isColored ? "text-white" : "text-zinc-900";
+  const textColor = isColored ? "text-white" : "text-white";
 
   return (
     <main className={`min-h-screen transition-colors duration-150 ${bgClass} ${textColor}`}>
@@ -335,9 +335,9 @@ export default function GuardScreen({
 
       {showGatePicker && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
-          <div className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-md w-full">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-md w-full">
             <h2 className="text-2xl font-bold mb-2">¿En qué garita estás?</h2>
-            <p className="text-zinc-700 text-sm mb-6">
+            <p className="text-zinc-400 text-sm mb-6">
               Esto identifica a esta tablet. Solo se elige una vez por dispositivo.
             </p>
             <div className="grid gap-2">
@@ -345,7 +345,7 @@ export default function GuardScreen({
                 <button
                   key={g.id}
                   onClick={() => chooseGate(g.id)}
-                  className="bg-zinc-100 hover:bg-emerald-600 font-semibold py-4 rounded-xl text-left px-4"
+                  className="bg-zinc-800 hover:bg-emerald-600 font-semibold py-4 rounded-xl text-left px-4"
                 >
                   {g.name}
                 </button>
@@ -369,14 +369,14 @@ export default function GuardScreen({
       )}
 
       <header className={`flex items-center justify-between px-6 py-3 text-sm gap-3 flex-wrap ${
-        isColored ? "bg-black/30" : "bg-zinc-50 border-b border-zinc-200"
+        isColored ? "bg-black/30" : "bg-zinc-950 border-b border-zinc-800"
       }`}>
         <div className="font-semibold">
           {orgName}
           {currentGate && (
             <button
               onClick={() => setShowGatePicker(true)}
-              className="ml-2 text-xs px-2 py-0.5 rounded bg-zinc-100 hover:bg-zinc-200 font-normal opacity-80"
+              className="ml-2 text-xs px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 font-normal opacity-80"
             >
               📍 {currentGate.name}
             </button>
@@ -384,7 +384,7 @@ export default function GuardScreen({
         </div>
 
         {/* Toggle dirección — el guardia lo cambia para registrar entradas vs salidas */}
-        <div className={`flex rounded-lg p-0.5 ${isColored ? "bg-black/40" : "bg-zinc-200"}`}>
+        <div className={`flex rounded-lg p-0.5 ${isColored ? "bg-black/40" : "bg-zinc-700"}`}>
           <button
             type="button"
             onClick={() => setDirection("in")}
@@ -393,7 +393,7 @@ export default function GuardScreen({
                 ? "bg-emerald-500 text-white shadow"
                 : isColored
                   ? "opacity-60 hover:opacity-100"
-                  : "text-zinc-700 hover:text-zinc-900"
+                  : "text-zinc-400 hover:text-white"
             }`}
           >
             ↘ ENTRADA
@@ -406,7 +406,7 @@ export default function GuardScreen({
                 ? "bg-sky-500 text-white shadow"
                 : isColored
                   ? "opacity-60 hover:opacity-100"
-                  : "text-zinc-700 hover:text-zinc-900"
+                  : "text-zinc-400 hover:text-white"
             }`}
           >
             ↗ SALIDA
@@ -416,7 +416,7 @@ export default function GuardScreen({
         <div className="flex items-center gap-3 opacity-80 ml-auto">
           {!online && <span className="bg-amber-500 text-black px-2 py-0.5 rounded text-xs font-bold">SIN CONEXIÓN</span>}
           {queueSize > 0 && (
-            <span className="bg-zinc-100 px-2 py-0.5 rounded text-xs">
+            <span className="bg-zinc-800 px-2 py-0.5 rounded text-xs">
               {queueSize} en cola
             </span>
           )}
@@ -431,7 +431,7 @@ export default function GuardScreen({
             className={`text-xs flex items-center gap-1 ${
               isColored
                 ? "opacity-60 hover:opacity-100"
-                : "px-3 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
+                : "px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400"
             }`}
           >
             🔍 Buscar
@@ -507,7 +507,7 @@ function IdleView() {
       <div className="text-center mb-10">
         <div className="text-7xl mb-6">📷</div>
         <h1 className="text-4xl font-bold mb-3">Escaneá el DNI</h1>
-        <p className="text-xl text-zinc-700">o tipeá el número y presioná Enter</p>
+        <p className="text-xl text-zinc-400">o tipeá el número y presioná Enter</p>
       </div>
 
       {stats && (
@@ -550,13 +550,13 @@ function IdleStat({
     <div
       className={`rounded-xl p-4 text-left transition ${
         highlight
-          ? "bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-900"
-          : "bg-white border border-zinc-200 text-zinc-900"
+          ? "bg-sky-600/20 border border-sky-500/40 hover:bg-blue-100 text-sky-300"
+          : "bg-zinc-900 border border-zinc-800 text-white"
       } ${href ? "hover:scale-[1.02] cursor-pointer" : ""}`}
     >
       <div className="text-2xl mb-1">{icon}</div>
       <div className="text-3xl font-bold tabular-nums">{value}</div>
-      <div className="text-xs text-zinc-600 mt-1">{label}</div>
+      <div className="text-xs text-zinc-400 mt-1">{label}</div>
     </div>
   );
   return href ? <a href={href}>{content}</a> : content;
@@ -567,7 +567,7 @@ function CheckingView({ raw }: { raw: string }) {
     <div>
       <div className="text-6xl mb-4 animate-pulse">⏳</div>
       <h1 className="text-3xl font-bold mb-2">Verificando…</h1>
-      <p className="text-zinc-700 text-sm break-all max-w-md">{raw.slice(0, 80)}</p>
+      <p className="text-zinc-400 text-sm break-all max-w-md">{raw.slice(0, 80)}</p>
     </div>
   );
 }
@@ -598,7 +598,7 @@ function ResultView({
         <div className="text-8xl mb-4">✅</div>
         <h1 className="text-5xl font-bold mb-2">AUTORIZADO</h1>
         {km && (
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 mb-3 text-sm font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-950/20 mb-3 text-sm font-bold">
             {km.emoji} {km.label}
           </div>
         )}
@@ -621,7 +621,7 @@ function ResultView({
           </div>
         )}
         {result.pendingPackages && result.pendingPackages > 0 ? (
-          <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-zinc-900 font-bold">
+          <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>
             <span>
               Tiene {result.pendingPackages} paquete{result.pendingPackages > 1 ? "s" : ""} esperando.{" "}
@@ -633,7 +633,7 @@ function ResultView({
         ) : null}
 
         {result.reservations && result.reservations.length > 0 ? (
-          <div className="bg-violet-600 rounded-xl px-4 py-3 mb-3 inline-block text-left text-zinc-900">
+          <div className="bg-violet-600 rounded-xl px-4 py-3 mb-3 inline-block text-left text-white">
             <div className="font-bold flex items-center gap-2 mb-1">
               <span className="text-xl">🛒</span> Reservas hoy
             </div>
@@ -671,7 +671,7 @@ function ResultView({
           <button
             onClick={() => onRegister({ result: "authorized" })}
             disabled={busy}
-            className="bg-white text-emerald-700 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
+            className="bg-zinc-950 text-emerald-400 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
           >
             {busy ? "Registrando…" : actionLabel}
           </button>
@@ -706,7 +706,7 @@ function ResultView({
       <div className="text-8xl mb-4">⚠️</div>
       <h1 className="text-4xl font-bold mb-2">{headline}</h1>
       {km && (
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 mb-3 text-sm font-bold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-950/20 mb-3 text-sm font-bold">
           {km.emoji} {km.label}
         </div>
       )}
@@ -728,14 +728,14 @@ function ResultView({
             })
           }
           disabled={busy}
-          className="bg-white text-amber-700 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
+          className="bg-zinc-950 text-amber-300 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
           Forzar {direction === "in" ? "entrada" : "salida"}
         </button>
         <button
           onClick={() => onRegister({ result: "manual", reason: "Rechazado" })}
           disabled={busy}
-          className="bg-rose-700 text-zinc-900 font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
+          className="bg-rose-700 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
           Rechazar
         </button>
@@ -761,7 +761,7 @@ function ErrorView({ message, onDismiss }: { message: string; onDismiss: () => v
       <p className="text-xl mb-6 opacity-90">{message}</p>
       <button
         onClick={onDismiss}
-        className="bg-white text-rose-700 font-bold text-lg px-6 py-3 rounded-xl"
+        className="bg-zinc-950 text-rose-300 font-bold text-lg px-6 py-3 rounded-xl"
       >
         Reintentar
       </button>
@@ -839,9 +839,9 @@ function SearchPanel({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white border border-zinc-200 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
       >
-        <div className="p-4 border-b border-zinc-200 flex items-center gap-3">
+        <div className="p-4 border-b border-zinc-800 flex items-center gap-3">
           <span className="text-xl">🔍</span>
           <input
             type="text"
@@ -851,12 +851,12 @@ function SearchPanel({
             placeholder="Buscar por nombre, apellido, DNI o lote…"
             autoFocus
             autoComplete="off"
-            className="flex-1 outline-none text-lg bg-transparent text-zinc-900 placeholder:text-zinc-400"
+            className="flex-1 outline-none text-lg bg-transparent text-white placeholder:text-zinc-400"
           />
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-900 text-sm px-2"
+            className="text-zinc-500 hover:text-white text-sm px-2"
             aria-label="Cerrar"
           >
             ✕ Esc
@@ -884,16 +884,16 @@ function SearchPanel({
                 onClick={() => onPick(r.dni)}
                 className="w-full text-left p-4 border-b border-zinc-100 last:border-0 hover:bg-blue-50 transition flex items-center gap-3"
               >
-                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-xl flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
                   {km ? km.emoji : r.kind === "authorization" ? "✋" : "👤"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-zinc-900">{r.name}</div>
-                  <div className="text-sm text-zinc-600">
+                  <div className="font-semibold text-white">{r.name}</div>
+                  <div className="text-sm text-zinc-400">
                     DNI {formatDni(r.dni)} · {r.detail}
                   </div>
                 </div>
-                <span className="text-blue-600 text-sm font-medium">Ver ficha →</span>
+                <span className="text-emerald-400 text-sm font-medium">Ver ficha →</span>
               </button>
             );
           })}

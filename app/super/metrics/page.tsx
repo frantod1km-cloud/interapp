@@ -42,8 +42,8 @@ export default async function MetricsPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-6">
-      <div className="text-zinc-700 text-sm mb-2">{label}</div>
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+      <div className="text-zinc-400 text-sm mb-2">{label}</div>
       <div className="text-3xl font-bold">{value}</div>
     </div>
   );

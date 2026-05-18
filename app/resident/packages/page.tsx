@@ -22,10 +22,10 @@ export default async function ResidentPackagesPage() {
   if (!resident) {
     return (
       <div>
-        <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 inline-block mb-4">
+        <Link href="/resident" className="text-sm text-zinc-400 hover:text-zinc-400 inline-block mb-4">
           ← Volver
         </Link>
-        <p className="text-zinc-700 text-sm">No estás asociado como residente.</p>
+        <p className="text-zinc-400 text-sm">No estás asociado como residente.</p>
       </div>
     );
   }
@@ -45,18 +45,18 @@ export default async function ResidentPackagesPage() {
 
   return (
     <div>
-      <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 inline-block mb-4">
+      <Link href="/resident" className="text-sm text-zinc-400 hover:text-zinc-400 inline-block mb-4">
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-6">Mis paquetes</h1>
 
       {/* Pendientes */}
       <section className="mb-6">
-        <h2 className="text-sm uppercase tracking-wider text-zinc-700 mb-3">
+        <h2 className="text-sm uppercase tracking-wider text-zinc-400 mb-3">
           En la garita ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <p className="text-zinc-700 text-sm">No tenés paquetes esperando.</p>
+          <p className="text-zinc-400 text-sm">No tenés paquetes esperando.</p>
         ) : (
           <div className="space-y-3">
             {pending.map((p) => {
@@ -64,7 +64,7 @@ export default async function ResidentPackagesPage() {
               return (
                 <div
                   key={p.id}
-                  className="bg-white border border-sky-600/40 rounded-2xl p-4"
+                  className="bg-zinc-950 border border-sky-600/40 rounded-2xl p-4"
                 >
                   <div className="flex gap-3 items-start">
                     {p.photo_url ? (
@@ -72,10 +72,10 @@ export default async function ResidentPackagesPage() {
                       <img
                         src={p.photo_url}
                         alt=""
-                        className="w-20 h-20 rounded-lg object-cover bg-zinc-100 flex-shrink-0"
+                        className="w-20 h-20 rounded-lg object-cover bg-zinc-800 flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-20 h-20 rounded-lg bg-zinc-100 flex items-center justify-center text-3xl flex-shrink-0">
+                      <div className="w-20 h-20 rounded-lg bg-zinc-800 flex items-center justify-center text-3xl flex-shrink-0">
                         📦
                       </div>
                     )}
@@ -86,7 +86,7 @@ export default async function ResidentPackagesPage() {
                           {age.label}
                         </span>
                       </div>
-                      <div className="text-sm text-zinc-700">
+                      <div className="text-sm text-zinc-400">
                         {p.courier && <>{p.courier} · </>}
                         {new Date(p.received_at).toLocaleString("es-AR", {
                           day: "2-digit",
@@ -99,7 +99,7 @@ export default async function ResidentPackagesPage() {
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <form action={residentMarkDeliveredAction}>
                           <input type="hidden" name="package_id" value={p.id} />
-                          <button className="text-xs bg-emerald-700/30 hover:bg-emerald-600 text-emerald-700 px-3 py-1 rounded">
+                          <button className="text-xs bg-emerald-700/30 hover:bg-emerald-600 text-emerald-400 px-3 py-1 rounded">
                             Ya lo retiré
                           </button>
                         </form>
@@ -122,31 +122,31 @@ export default async function ResidentPackagesPage() {
 
       {/* Historial */}
       <section>
-        <h2 className="text-sm uppercase tracking-wider text-zinc-700 mb-3">Historial</h2>
+        <h2 className="text-sm uppercase tracking-wider text-zinc-400 mb-3">Historial</h2>
         {history.length === 0 ? (
-          <p className="text-zinc-700 text-sm">Sin historial aún.</p>
+          <p className="text-zinc-400 text-sm">Sin historial aún.</p>
         ) : (
           <div className="space-y-2">
             {history.map((p) => (
               <div
                 key={p.id}
-                className="bg-white border border-zinc-200 rounded-xl p-3 flex gap-3 items-center"
+                className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex gap-3 items-center"
               >
                 {p.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={p.photo_url}
                     alt=""
-                    className="w-12 h-12 rounded-md object-cover bg-zinc-100 flex-shrink-0"
+                    className="w-12 h-12 rounded-md object-cover bg-zinc-800 flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center text-xl flex-shrink-0">
+                  <div className="w-12 h-12 rounded-md bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
                     📦
                   </div>
                 )}
                 <div className="flex-1 min-w-0 text-sm">
                   <div className="font-medium">{p.description}</div>
-                  <div className="text-xs text-zinc-700">
+                  <div className="text-xs text-zinc-400">
                     {p.status === "delivered" ? "Entregado" : "Devuelto"}
                     {p.delivered_at &&
                       ` · ${new Date(p.delivered_at).toLocaleDateString("es-AR")}`}

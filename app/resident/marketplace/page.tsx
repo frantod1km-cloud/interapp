@@ -40,13 +40,13 @@ export default async function ResidentMarketplacePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-2">🛒 Reservas</h1>
-      <p className="text-zinc-700 text-sm mb-6">
+      <p className="text-zinc-400 text-sm mb-6">
         Reservá espacios, comprá entradas a eventos del barrio y suscribite a membresías.
       </p>
 
       {myReservations && myReservations.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm uppercase tracking-wider text-zinc-700 mb-3">
+          <h2 className="text-sm uppercase tracking-wider text-zinc-400 mb-3">
             Mis próximas reservas
           </h2>
           <div className="space-y-2">
@@ -56,9 +56,9 @@ export default async function ResidentMarketplacePage() {
               return (
                 <div
                   key={r.id}
-                  className="bg-white border border-zinc-200 rounded-xl p-3 flex items-center gap-3"
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-md bg-zinc-100 flex items-center justify-center text-xl flex-shrink-0">
+                  <div className="w-12 h-12 rounded-md bg-zinc-800 flex items-center justify-center text-xl flex-shrink-0">
                     {l?.photo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={l.photo_url} alt="" className="w-full h-full object-cover rounded-md" />
@@ -68,7 +68,7 @@ export default async function ResidentMarketplacePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{l?.name}</div>
-                    <div className="text-xs text-zinc-700">
+                    <div className="text-xs text-zinc-400">
                       {new Date(r.starts_at).toLocaleString("es-AR", {
                         day: "2-digit",
                         month: "2-digit",
@@ -80,8 +80,8 @@ export default async function ResidentMarketplacePage() {
                   <span
                     className={`text-xs px-2 py-1 rounded ${
                       r.status === "confirmed"
-                        ? "bg-emerald-500/20 text-emerald-700"
-                        : "bg-amber-500/20 text-amber-700"
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-amber-500/20 text-amber-300"
                     }`}
                   >
                     {r.status === "confirmed" ? "Confirmada" : "Esperando pago"}
@@ -93,9 +93,9 @@ export default async function ResidentMarketplacePage() {
         </section>
       )}
 
-      <h2 className="text-sm uppercase tracking-wider text-zinc-700 mb-3">Disponibles</h2>
+      <h2 className="text-sm uppercase tracking-wider text-zinc-400 mb-3">Disponibles</h2>
       {(listings ?? []).length === 0 ? (
-        <p className="text-zinc-700 text-sm text-center py-8">
+        <p className="text-zinc-400 text-sm text-center py-8">
           La administración todavía no cargó espacios ni eventos disponibles.
         </p>
       ) : (
@@ -106,29 +106,29 @@ export default async function ResidentMarketplacePage() {
               <Link
                 key={l.id}
                 href={`/resident/marketplace/${l.id}`}
-                className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:border-emerald-500/50 transition"
+                className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-emerald-500/50 transition"
               >
                 {l.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={l.photo_url} alt="" className="w-full h-36 object-cover bg-zinc-100" />
+                  <img src={l.photo_url} alt="" className="w-full h-36 object-cover bg-zinc-800" />
                 ) : (
-                  <div className="w-full h-36 bg-zinc-100 flex items-center justify-center text-5xl">
+                  <div className="w-full h-36 bg-zinc-800 flex items-center justify-center text-5xl">
                     {meta.emoji}
                   </div>
                 )}
                 <div className="p-4">
-                  <div className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 inline-block mb-2">
+                  <div className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 inline-block mb-2">
                     {meta.emoji} {meta.label}
                   </div>
                   <h3 className="font-bold mb-1">{l.name}</h3>
                   {l.description && (
-                    <p className="text-xs text-zinc-700 line-clamp-2 mb-2">{l.description}</p>
+                    <p className="text-xs text-zinc-400 line-clamp-2 mb-2">{l.description}</p>
                   )}
-                  <div className="text-lg font-bold text-emerald-700">
+                  <div className="text-lg font-bold text-emerald-400">
                     {formatArs(l.price_ars)}
                   </div>
                   {l.kind === "event" && l.event_starts_at && (
-                    <div className="text-xs text-zinc-700 mt-1">
+                    <div className="text-xs text-zinc-400 mt-1">
                       📅 {new Date(l.event_starts_at).toLocaleString("es-AR", {
                         day: "2-digit",
                         month: "2-digit",

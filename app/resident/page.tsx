@@ -43,7 +43,7 @@ export default async function ResidentHome() {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Hola{resident ? `, ${resident.first_name}` : ""}</h1>
-        {resident?.unit && <p className="text-sm text-zinc-700">{resident.unit}</p>}
+        {resident?.unit && <p className="text-sm text-zinc-400">{resident.unit}</p>}
       </header>
 
       {!resident ? (
@@ -56,13 +56,13 @@ export default async function ResidentHome() {
           <div className="flex gap-3 mb-4">
             <Link
               href="/resident/authorize"
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-center font-semibold py-4 rounded-2xl"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-center font-semibold py-4 rounded-2xl"
             >
               + Autorizar visita
             </Link>
             <Link
               href="/resident/invite"
-              className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-center font-semibold py-4 rounded-2xl"
+              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-center font-semibold py-4 rounded-2xl"
             >
               Generar link
             </Link>
@@ -76,7 +76,7 @@ export default async function ResidentHome() {
 
           {(templates ?? []).length > 0 && (
             <>
-              <h2 className="text-sm uppercase tracking-wider text-zinc-700 mb-3">
+              <h2 className="text-sm uppercase tracking-wider text-zinc-400 mb-3">
                 Recurrentes (1 toque para autorizar hoy)
               </h2>
               <div className="grid grid-cols-2 gap-2 mb-6">
@@ -93,28 +93,28 @@ export default async function ResidentHome() {
           )}
 
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm uppercase tracking-wider text-zinc-700">Vigentes</h2>
-            <Link href="/resident/templates" className="text-xs text-zinc-700 hover:text-zinc-900 underline">
+            <h2 className="text-sm uppercase tracking-wider text-zinc-400">Vigentes</h2>
+            <Link href="/resident/templates" className="text-xs text-zinc-400 hover:text-white underline">
               Plantillas recurrentes
             </Link>
           </div>
           <div className="space-y-2">
             {(auths ?? []).length === 0 && (
-              <p className="text-zinc-700 text-sm">No tenés visitas autorizadas en este momento.</p>
+              <p className="text-zinc-400 text-sm">No tenés visitas autorizadas en este momento.</p>
             )}
             {(auths ?? []).map((a) => (
-              <div key={a.id} className="bg-white border border-zinc-200 rounded-xl p-4 flex items-start justify-between gap-3">
+              <div key={a.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">
                     {a.visitor_name ?? (a.invite_token && !a.claimed_at ? "Esperando que cargue el DNI" : "Visitante")}
                   </div>
-                  <div className="text-sm text-zinc-700">
+                  <div className="text-sm text-zinc-400">
                     {a.dni ? `DNI ${formatDni(a.dni)}` : "Sin DNI todavía"} · vence {new Date(a.valid_until).toLocaleString("es-AR")}
                   </div>
                   {a.invite_token && !a.claimed_at && (
                     <Link
                       href={`/resident/invite/${a.id}`}
-                      className="text-emerald-700 text-sm underline mt-1 inline-block"
+                      className="text-emerald-400 text-sm underline mt-1 inline-block"
                     >
                       Ver / compartir link
                     </Link>
@@ -122,7 +122,7 @@ export default async function ResidentHome() {
                 </div>
                 <form action={revokeAuthAction}>
                   <input type="hidden" name="auth_id" value={a.id} />
-                  <button className="text-xs px-3 py-1 rounded bg-zinc-100 hover:bg-rose-700">
+                  <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-700">
                     Revocar
                   </button>
                 </form>

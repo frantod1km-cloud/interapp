@@ -26,7 +26,7 @@ export default async function GuardPackagePage({
   const role = await getCurrentMemberRole(org.id);
   if (role !== "guard" && role !== "guard_lead" && role !== "org_admin") {
     return (
-      <main className="min-h-screen flex items-center justify-center p-8 bg-white text-zinc-900">
+      <main className="min-h-screen flex items-center justify-center p-8 bg-zinc-950 text-white">
         <p>Esta sección es para guardias.</p>
       </main>
     );
@@ -59,16 +59,16 @@ export default async function GuardPackagePage({
   ]);
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
-      <header className="flex items-center justify-between px-6 py-4 bg-black/40 border-b border-zinc-200">
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <header className="flex items-center justify-between px-6 py-4 bg-black/40 border-b border-zinc-800">
         <div className="flex items-center gap-4">
-          <Link href="/guard" className="text-sm text-zinc-700 hover:text-zinc-900">
+          <Link href="/guard" className="text-sm text-zinc-400 hover:text-white">
             ← Control de acceso
           </Link>
           <h1 className="font-bold">📦 Paquetería · {org.name}</h1>
         </div>
         <form action="/api/logout" method="post">
-          <button className="text-sm text-zinc-700 hover:text-zinc-900">Salir</button>
+          <button className="text-sm text-zinc-400 hover:text-white">Salir</button>
         </form>
       </header>
 
@@ -79,13 +79,13 @@ export default async function GuardPackagePage({
           </div>
         )}
         {sp.error && (
-          <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 text-sm text-rose-700">
+          <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 text-sm text-rose-300">
             {decodeURIComponent(sp.error)}
           </div>
         )}
 
         {/* Form para recibir un paquete nuevo */}
-        <section className="bg-white border border-zinc-200 rounded-2xl p-5">
+        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <h2 className="font-bold text-lg mb-3">Recibir paquete</h2>
           <PackageForm
             residents={(residentsResp.data ?? []).map((r) => ({
@@ -101,12 +101,12 @@ export default async function GuardPackagePage({
         </section>
 
         {/* Pendientes */}
-        <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
-          <header className="px-5 py-3 bg-white font-bold flex items-center justify-between">
+        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <header className="px-5 py-3 bg-zinc-950 font-bold flex items-center justify-between">
             <span>Pendientes de retirar ({pendingResp.data?.length ?? 0})</span>
           </header>
           {(pendingResp.data ?? []).length === 0 ? (
-            <p className="px-5 py-8 text-center text-zinc-700 text-sm">
+            <p className="px-5 py-8 text-center text-zinc-400 text-sm">
               No hay paquetes esperando.
             </p>
           ) : (
@@ -122,10 +122,10 @@ export default async function GuardPackagePage({
                       <img
                         src={p.photo_url}
                         alt=""
-                        className="w-20 h-20 rounded-lg object-cover bg-zinc-100 flex-shrink-0"
+                        className="w-20 h-20 rounded-lg object-cover bg-zinc-800 flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-20 h-20 rounded-lg bg-zinc-100 flex items-center justify-center text-3xl flex-shrink-0">
+                      <div className="w-20 h-20 rounded-lg bg-zinc-800 flex items-center justify-center text-3xl flex-shrink-0">
                         📦
                       </div>
                     )}
@@ -136,12 +136,12 @@ export default async function GuardPackagePage({
                           {age.label}
                         </span>
                         {p.pickup_pin && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 border border-amber-500/40">
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             🔑 PIN activo
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-zinc-700">
+                      <div className="text-sm text-zinc-400">
                         {p.courier && <>{p.courier} · </>}
                         {new Date(p.received_at).toLocaleString("es-AR", {
                           day: "2-digit",
@@ -153,11 +153,11 @@ export default async function GuardPackagePage({
                       {r && (
                         <div className="text-sm mt-1">
                           {km && <span className="text-xs">{km.emoji}</span>}{" "}
-                          <span className="text-zinc-700">
+                          <span className="text-zinc-400">
                             {r.last_name}, {r.first_name}
                           </span>
-                          {r.unit && <span className="text-zinc-700"> · {r.unit}</span>}
-                          <span className="text-zinc-700 tabular-nums"> · DNI {formatDni(r.dni)}</span>
+                          {r.unit && <span className="text-zinc-400"> · {r.unit}</span>}
+                          <span className="text-zinc-400 tabular-nums"> · DNI {formatDni(r.dni)}</span>
                         </div>
                       )}
                     </div>

@@ -16,12 +16,12 @@ export default async function SuperOrgsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Organizaciones</h1>
-        <span className="text-sm text-zinc-700">{orgs?.length ?? 0} totales</span>
+        <span className="text-sm text-zinc-400">{orgs?.length ?? 0} totales</span>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-white text-zinc-700 text-left">
+          <thead className="bg-zinc-950 text-zinc-400 text-left">
             <tr>
               <th className="px-4 py-3">Barrio</th>
               <th className="px-4 py-3">Subdominio</th>
@@ -35,14 +35,14 @@ export default async function SuperOrgsPage() {
             {(orgs ?? []).map((o) => {
               const plan = PLANS[o.plan as PlanId];
               return (
-                <tr key={o.id} className="border-t border-zinc-200">
+                <tr key={o.id} className="border-t border-zinc-800">
                   <td className="px-4 py-3 font-medium">{o.name}</td>
-                  <td className="px-4 py-3 text-zinc-700">{o.slug}</td>
+                  <td className="px-4 py-3 text-zinc-400">{o.slug}</td>
                   <td className="px-4 py-3">{plan?.name ?? o.plan}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={o.status} />
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td className="px-4 py-3 text-zinc-400">
                     {new Date(o.created_at).toLocaleDateString("es-AR")}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -55,7 +55,7 @@ export default async function SuperOrgsPage() {
                       />
                       <button
                         type="submit"
-                        className="text-xs px-3 py-1 rounded bg-zinc-100 hover:bg-zinc-200"
+                        className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700"
                       >
                         {o.status === "suspended" ? "Reactivar" : "Suspender"}
                       </button>
@@ -66,7 +66,7 @@ export default async function SuperOrgsPage() {
             })}
             {(!orgs || orgs.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-700">
+                <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
                   Sin organizaciones aún.
                 </td>
               </tr>
@@ -80,11 +80,11 @@ export default async function SuperOrgsPage() {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    active: "bg-emerald-600/20 text-emerald-700",
-    past_due: "bg-amber-600/20 text-amber-700",
-    suspended: "bg-rose-700/20 text-rose-700",
-    archived: "bg-zinc-200/40 text-zinc-700",
+    active: "bg-emerald-600/20 text-emerald-400",
+    past_due: "bg-amber-600/20 text-amber-300",
+    suspended: "bg-rose-700/20 text-rose-300",
+    archived: "bg-zinc-700/40 text-zinc-400",
   };
-  const cls = map[status] ?? "bg-zinc-200/40 text-zinc-700";
+  const cls = map[status] ?? "bg-zinc-700/40 text-zinc-400";
   return <span className={`text-xs px-2 py-1 rounded ${cls}`}>{status}</span>;
 }

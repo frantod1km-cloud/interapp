@@ -18,7 +18,7 @@ export default async function ResidentHistoryPage() {
     .maybeSingle();
 
   if (!resident) {
-    return <p className="text-zinc-700 text-sm">No estás asociado como residente.</p>;
+    return <p className="text-zinc-400 text-sm">No estás asociado como residente.</p>;
   }
 
   // Eventos de personas que vinieron con autorización mía
@@ -32,18 +32,18 @@ export default async function ResidentHistoryPage() {
 
   return (
     <div>
-      <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 mb-4 inline-block">
+      <Link href="/resident" className="text-sm text-zinc-400 hover:text-zinc-400 mb-4 inline-block">
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-6">Mis visitas recientes</h1>
       <div className="space-y-2">
         {(events ?? []).length === 0 && (
-          <p className="text-zinc-700 text-sm">Todavía no entró ninguna de tus visitas.</p>
+          <p className="text-zinc-400 text-sm">Todavía no entró ninguna de tus visitas.</p>
         )}
         {(events ?? []).map((e) => (
-          <div key={e.id} className="bg-white border border-zinc-200 rounded-xl p-4">
+          <div key={e.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <div className="font-medium">{e.full_name ?? "Visitante"}</div>
-            <div className="text-sm text-zinc-700">
+            <div className="text-sm text-zinc-400">
               DNI {formatDni(e.dni)} ·{" "}
               {new Date(e.occurred_at).toLocaleString("es-AR")}
             </div>

@@ -11,11 +11,11 @@ export default function NewInvitePage() {
 
   return (
     <div>
-      <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 mb-4 inline-block">
+      <Link href="/resident" className="text-sm text-zinc-400 hover:text-zinc-400 mb-4 inline-block">
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-2">Generar link para invitado</h1>
-      <p className="text-sm text-zinc-700 mb-6">
+      <p className="text-sm text-zinc-400 mb-6">
         Compartile el link al invitado. Cuando lo abra y cargue su DNI, queda autorizado
         automáticamente.
       </p>
@@ -28,7 +28,7 @@ export default function NewInvitePage() {
           defaultValue={localIso}
           required
         />
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-4 rounded-2xl">
+        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-4 rounded-2xl">
           Generar link
         </button>
       </form>
@@ -39,8 +39,8 @@ export default function NewInvitePage() {
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
-      <label className="block text-sm mb-1 text-zinc-700">{label}</label>
-      <input {...props} className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3" />
+      <label className="block text-sm mb-1 text-zinc-400">{label}</label>
+      <input {...props} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3" />
     </div>
   );
 }
