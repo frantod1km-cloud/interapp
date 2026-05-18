@@ -6,10 +6,10 @@ import { formatDni } from "@/lib/dni/parse";
 export const dynamic = "force-dynamic";
 
 const RESULT_LABEL: Record<string, { label: string; className: string }> = {
-  authorized: { label: "Autorizado", className: "text-emerald-400" },
-  forced: { label: "Forzado", className: "text-amber-400" },
-  denied: { label: "Rechazado", className: "text-rose-400" },
-  manual: { label: "Manual", className: "text-zinc-400" },
+  authorized: { label: "Autorizado", className: "text-emerald-700" },
+  forced: { label: "Forzado", className: "text-amber-700" },
+  denied: { label: "Rechazado", className: "text-rose-700" },
+  manual: { label: "Manual", className: "text-zinc-700" },
 };
 
 function rangeFromQuery(from?: string, to?: string): { from: Date; to: Date; isToday: boolean } {
@@ -64,34 +64,34 @@ export default async function EventsPage({
         </h1>
         <Link
           href={exportHref}
-          className="bg-zinc-800 hover:bg-zinc-700 text-sm px-4 py-2 rounded-lg font-medium"
+          className="bg-zinc-100 hover:bg-zinc-200 text-sm px-4 py-2 rounded-lg font-medium"
         >
           ⬇ Exportar CSV
         </Link>
       </div>
 
-      <form method="get" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 flex gap-3 flex-wrap items-end">
+      <form method="get" className="bg-white border border-zinc-200 rounded-2xl p-4 mb-6 flex gap-3 flex-wrap items-end">
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Desde</label>
-          <input type="date" name="from" defaultValue={sp.from ?? fromStr} className="bg-zinc-950 border border-zinc-800 rounded px-3 py-2" />
+          <label className="block text-xs text-zinc-700 mb-1">Desde</label>
+          <input type="date" name="from" defaultValue={sp.from ?? fromStr} className="bg-white border border-zinc-200 rounded px-3 py-2" />
         </div>
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Hasta</label>
-          <input type="date" name="to" defaultValue={sp.to ?? toStr} className="bg-zinc-950 border border-zinc-800 rounded px-3 py-2" />
+          <label className="block text-xs text-zinc-700 mb-1">Hasta</label>
+          <input type="date" name="to" defaultValue={sp.to ?? toStr} className="bg-white border border-zinc-200 rounded px-3 py-2" />
         </div>
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-xs text-zinc-400 mb-1">Buscar DNI</label>
-          <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Ej: 35123456" className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2" />
+          <label className="block text-xs text-zinc-700 mb-1">Buscar DNI</label>
+          <input type="text" name="q" defaultValue={sp.q ?? ""} placeholder="Ej: 35123456" className="w-full bg-white border border-zinc-200 rounded px-3 py-2" />
         </div>
-        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">Filtrar</button>
+        <button className="bg-blue-600 hover:bg-blue-500 font-semibold rounded px-4 py-2">Filtrar</button>
         {(sp.from || sp.to || sp.q) && (
-          <Link href="/admin/events" className="text-sm text-zinc-500 hover:text-white">Limpiar</Link>
+          <Link href="/admin/events" className="text-sm text-zinc-700 hover:text-zinc-900">Limpiar</Link>
         )}
       </form>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-950 text-zinc-400 text-left">
+          <thead className="bg-white text-zinc-700 text-left">
             <tr>
               <th className="px-4 py-3">Fecha y hora</th>
               <th className="px-4 py-3">Persona</th>
@@ -105,8 +105,8 @@ export default async function EventsPage({
             {(events ?? []).map((e) => {
               const r = RESULT_LABEL[e.result] ?? { label: e.result, className: "" };
               return (
-                <tr key={e.id} className="border-t border-zinc-800">
-                  <td className="px-4 py-3 tabular-nums text-zinc-300">
+                <tr key={e.id} className="border-t border-zinc-200">
+                  <td className="px-4 py-3 tabular-nums text-zinc-700">
                     {new Date(e.occurred_at).toLocaleString("es-AR", {
                       day: "2-digit",
                       month: "2-digit",
@@ -118,19 +118,19 @@ export default async function EventsPage({
                   <td className="px-4 py-3 tabular-nums">{formatDni(e.dni)}</td>
                   <td className="px-4 py-3">
                     {e.direction === "in" ? (
-                      <span className="text-emerald-400">↘ Entrada</span>
+                      <span className="text-emerald-700">↘ Entrada</span>
                     ) : (
-                      <span className="text-sky-400">↗ Salida</span>
+                      <span className="text-sky-700">↗ Salida</span>
                     )}
                   </td>
                   <td className={`px-4 py-3 font-medium ${r.className}`}>{r.label}</td>
-                  <td className="px-4 py-3 text-zinc-500">{e.reason ?? ""}</td>
+                  <td className="px-4 py-3 text-zinc-700">{e.reason ?? ""}</td>
                 </tr>
               );
             })}
             {(!events || events.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-zinc-700">
                   Sin eventos en este rango.
                 </td>
               </tr>

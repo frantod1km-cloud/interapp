@@ -73,7 +73,7 @@ export default function PinButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded"
+        className="text-xs bg-zinc-100 hover:bg-zinc-200 px-3 py-1 rounded"
       >
         🔑 Que lo retire otro
       </button>
@@ -82,19 +82,19 @@ export default function PinButton({
 
   if (pin) {
     return (
-      <div className="bg-zinc-950 border border-emerald-700/40 rounded-lg p-3 mt-2 space-y-2">
-        <div className="text-xs text-zinc-400">PIN para retirar:</div>
-        <div className="font-mono text-2xl font-bold tracking-widest text-center bg-zinc-900 rounded py-2">
+      <div className="bg-white border border-emerald-700/40 rounded-lg p-3 mt-2 space-y-2">
+        <div className="text-xs text-zinc-700">PIN para retirar:</div>
+        <div className="font-mono text-2xl font-bold tracking-widest text-center bg-white border border-zinc-200 rounded py-2">
           {pin}
         </div>
         {holderName && (
-          <div className="text-xs text-zinc-500 text-center">Para: {holderName}</div>
+          <div className="text-xs text-zinc-700 text-center">Para: {holderName}</div>
         )}
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={copyPin}
-            className="text-xs bg-zinc-800 hover:bg-zinc-700 py-2 rounded"
+            className="text-xs bg-zinc-100 hover:bg-zinc-200 py-2 rounded"
           >
             {copied ? "✓ Copiado" : "Copiar PIN"}
           </button>
@@ -111,7 +111,7 @@ export default function PinButton({
           type="button"
           onClick={revoke}
           disabled={busy}
-          className="w-full text-xs text-rose-400 hover:text-rose-300 py-1 disabled:opacity-50"
+          className="w-full text-xs text-rose-700 hover:text-rose-700 py-1 disabled:opacity-50"
         >
           Cancelar PIN
         </button>
@@ -121,20 +121,20 @@ export default function PinButton({
 
   // open && !pin → form para generar
   return (
-    <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 mt-2 space-y-2">
+    <div className="bg-white border border-zinc-200 rounded-lg p-3 mt-2 space-y-2">
       <input
         type="text"
         value={holder}
         onChange={(e) => setHolder(e.target.value)}
         placeholder="Nombre de quien va a retirar (opcional)"
-        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm"
+        className="w-full bg-white border border-zinc-200 rounded px-3 py-2 text-sm"
       />
-      {error && <p className="text-xs text-rose-400">{error}</p>}
+      {error && <p className="text-xs text-rose-700">{error}</p>}
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs bg-zinc-800 hover:bg-zinc-700 py-2 rounded"
+          className="text-xs bg-zinc-100 hover:bg-zinc-200 py-2 rounded"
         >
           Cancelar
         </button>
@@ -142,7 +142,7 @@ export default function PinButton({
           type="button"
           onClick={generate}
           disabled={busy}
-          className="text-xs bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-semibold disabled:opacity-50"
+          className="text-xs bg-blue-600 hover:bg-blue-500 py-2 rounded font-semibold disabled:opacity-50"
         >
           {busy ? "Generando…" : "Generar PIN"}
         </button>

@@ -19,19 +19,19 @@ export default async function SuperLayout({ children }: { children: React.ReactN
   const isSuper = (user.user_metadata as { is_super?: boolean } | null)?.is_super === true;
   if (!isSuper) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-8 bg-zinc-950 text-white">
+      <main className="min-h-screen flex items-center justify-center p-8 bg-white text-zinc-900">
         <p>Esta sección es solo para administradores de la plataforma.</p>
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <header className="border-b border-zinc-800 px-6 py-4 flex items-center gap-6">
+    <div className="min-h-screen bg-white text-zinc-900">
+      <header className="border-b border-zinc-200 px-6 py-4 flex items-center gap-6">
         <div className="font-bold">interapp · super</div>
-        <nav className="flex gap-4 text-sm text-zinc-400">
-          <Link href="/super" className="hover:text-white">Organizaciones</Link>
-          <Link href="/super/metrics" className="hover:text-white">Métricas</Link>
+        <nav className="flex gap-4 text-sm text-zinc-700">
+          <Link href="/super" className="hover:text-zinc-900">Organizaciones</Link>
+          <Link href="/super/metrics" className="hover:text-zinc-900">Métricas</Link>
         </nav>
       </header>
       <main className="p-6 max-w-6xl mx-auto">{children}</main>

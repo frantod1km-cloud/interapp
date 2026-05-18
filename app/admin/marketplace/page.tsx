@@ -39,19 +39,19 @@ export default async function AdminMarketplacePage() {
         <div className="flex gap-2">
           <Link
             href="/admin/payment-settings"
-            className="bg-zinc-800 hover:bg-zinc-700 text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-zinc-100 hover:bg-zinc-200 text-sm px-4 py-2 rounded-lg font-medium"
           >
             ⚙️ Pagos
           </Link>
           <Link
             href="/admin/marketplace/new"
-            className="bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold px-4 py-2 rounded-lg"
+            className="bg-blue-600 hover:bg-blue-500 text-sm font-semibold px-4 py-2 rounded-lg"
           >
             + Nuevo
           </Link>
         </div>
       </div>
-      <p className="text-zinc-400 text-sm mb-6">
+      <p className="text-zinc-700 text-sm mb-6">
         Espacios, eventos y membresías que los residentes pueden reservar y pagar desde su panel.
         Los cobros van directo a la cuenta de Mercado Pago del barrio.
       </p>
@@ -78,16 +78,16 @@ export default async function AdminMarketplacePage() {
       )}
 
       {(listings ?? []).length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+        <div className="bg-white border border-zinc-200 rounded-2xl p-8 text-center">
           <div className="text-5xl mb-3">🏛️</div>
           <h2 className="font-bold text-lg mb-2">Sin items todavía</h2>
-          <p className="text-zinc-400 text-sm mb-4">
+          <p className="text-zinc-700 text-sm mb-4">
             Empezá creando un espacio (ej: SUM, pileta), un evento (cena, taller) o una membresía
             (gimnasio).
           </p>
           <Link
             href="/admin/marketplace/new"
-            className="inline-block bg-emerald-600 hover:bg-emerald-500 font-semibold px-6 py-3 rounded-xl"
+            className="inline-block bg-blue-600 hover:bg-blue-500 font-semibold px-6 py-3 rounded-xl"
           >
             Crear el primero
           </Link>
@@ -100,36 +100,36 @@ export default async function AdminMarketplacePage() {
               <Link
                 key={l.id}
                 href={`/admin/marketplace/${l.id}`}
-                className={`bg-zinc-900 border rounded-2xl overflow-hidden hover:border-emerald-500/40 transition ${
-                  l.active ? "border-zinc-800" : "border-zinc-900 opacity-60"
+                className={`bg-white border rounded-2xl overflow-hidden hover:border-emerald-500/40 transition ${
+                  l.active ? "border-zinc-200" : "border-zinc-200 opacity-60"
                 }`}
               >
                 {l.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={l.photo_url} alt="" className="w-full h-32 object-cover bg-zinc-800" />
+                  <img src={l.photo_url} alt="" className="w-full h-32 object-cover bg-zinc-100" />
                 ) : (
-                  <div className="w-full h-32 bg-zinc-800 flex items-center justify-center text-5xl">
+                  <div className="w-full h-32 bg-zinc-100 flex items-center justify-center text-5xl">
                     {meta.emoji}
                   </div>
                 )}
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                    <span className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">
                       {meta.emoji} {meta.label}
                     </span>
                     {!l.active && (
-                      <span className="text-xs px-2 py-0.5 rounded bg-zinc-700/40 text-zinc-500">
+                      <span className="text-xs px-2 py-0.5 rounded bg-zinc-200/40 text-zinc-700">
                         Inactivo
                       </span>
                     )}
                   </div>
                   <h3 className="font-bold mb-1">{l.name}</h3>
                   {l.description && (
-                    <p className="text-xs text-zinc-500 line-clamp-2 mb-2">{l.description}</p>
+                    <p className="text-xs text-zinc-700 line-clamp-2 mb-2">{l.description}</p>
                   )}
-                  <div className="text-lg font-bold text-emerald-400">{formatArs(l.price_ars)}</div>
+                  <div className="text-lg font-bold text-emerald-700">{formatArs(l.price_ars)}</div>
                   {l.kind === "event" && l.event_starts_at && (
-                    <div className="text-xs text-zinc-500 mt-1">
+                    <div className="text-xs text-zinc-700 mt-1">
                       📅 {new Date(l.event_starts_at).toLocaleString("es-AR", {
                         day: "2-digit",
                         month: "2-digit",

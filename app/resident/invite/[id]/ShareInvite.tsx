@@ -17,13 +17,13 @@ export default function ShareInvite({ url }: { url: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm break-all">
+      <div className="bg-white border border-zinc-200 rounded-xl p-3 text-sm break-all">
         {url}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={copy}
-          className="bg-zinc-800 hover:bg-zinc-700 font-semibold py-3 rounded-xl"
+          className="bg-zinc-100 hover:bg-zinc-200 font-semibold py-3 rounded-xl"
         >
           {copied ? "✓ Copiado" : "Copiar link"}
         </button>
@@ -31,7 +31,7 @@ export default function ShareInvite({ url }: { url: string }) {
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-emerald-600 hover:bg-emerald-500 text-center font-semibold py-3 rounded-xl"
+          className="bg-blue-600 hover:bg-blue-500 text-center font-semibold py-3 rounded-xl"
         >
           Enviar por WhatsApp
         </a>

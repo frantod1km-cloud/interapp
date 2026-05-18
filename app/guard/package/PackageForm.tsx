@@ -90,14 +90,14 @@ export default function PackageForm({
     <form action={createPackageAction} onSubmit={onSubmit} className="space-y-4">
       {/* Selector de residente */}
       <div>
-        <label className="block text-sm mb-1 text-zinc-400">¿Para quién es?</label>
+        <label className="block text-sm mb-1 text-zinc-700">¿Para quién es?</label>
         {selected ? (
-          <div className="bg-zinc-950 border border-emerald-700/40 rounded-lg p-3 flex items-center justify-between">
+          <div className="bg-white border border-emerald-700/40 rounded-lg p-3 flex items-center justify-between">
             <div>
               <div className="font-semibold">
                 {kindMeta(selected.kind).emoji} {selected.last_name}, {selected.first_name}
               </div>
-              <div className="text-xs text-zinc-400">
+              <div className="text-xs text-zinc-700">
                 DNI {formatDni(selected.dni)} {selected.unit && `· ${selected.unit}`}
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function PackageForm({
                 setSelected(null);
                 setQuery("");
               }}
-              className="text-xs text-zinc-500 hover:text-white underline"
+              className="text-xs text-zinc-700 hover:text-zinc-900 underline"
             >
               Cambiar
             </button>
@@ -120,10 +120,10 @@ export default function PackageForm({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nombre, DNI o unidad…"
               autoComplete="off"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3"
+              className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
             />
             {filtered.length > 0 && (
-              <ul className="mt-2 bg-zinc-950 border border-zinc-800 rounded-lg divide-y divide-zinc-800 max-h-72 overflow-y-auto">
+              <ul className="mt-2 bg-white border border-zinc-200 rounded-lg divide-y divide-zinc-800 max-h-72 overflow-y-auto">
                 {filtered.map((r) => {
                   const km = kindMeta(r.kind);
                   return (
@@ -134,17 +134,17 @@ export default function PackageForm({
                           setSelected(r);
                           setQuery("");
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-zinc-900 flex items-center justify-between gap-3"
+                        className="w-full text-left px-4 py-2 hover:bg-white border border-zinc-200 flex items-center justify-between gap-3"
                       >
                         <div>
                           <div className="font-medium">
                             {km.emoji} {r.last_name}, {r.first_name}
                           </div>
-                          <div className="text-xs text-zinc-500">
+                          <div className="text-xs text-zinc-700">
                             DNI {formatDni(r.dni)} {r.unit && `· ${r.unit}`}
                           </div>
                         </div>
-                        <span className="text-xs text-zinc-600">Elegir →</span>
+                        <span className="text-xs text-zinc-700">Elegir →</span>
                       </button>
                     </li>
                   );
@@ -152,7 +152,7 @@ export default function PackageForm({
               </ul>
             )}
             {q && filtered.length === 0 && (
-              <p className="text-xs text-zinc-500 mt-2">Sin resultados.</p>
+              <p className="text-xs text-zinc-700 mt-2">Sin resultados.</p>
             )}
           </>
         )}
@@ -161,20 +161,20 @@ export default function PackageForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm mb-1 text-zinc-400">Descripción</label>
+          <label className="block text-sm mb-1 text-zinc-700">Descripción</label>
           <input
             name="description"
             required
             placeholder='Ej: "Caja chica Mercado Libre"'
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3"
+            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
           />
         </div>
         <div>
-          <label className="block text-sm mb-1 text-zinc-400">Mensajería</label>
+          <label className="block text-sm mb-1 text-zinc-700">Mensajería</label>
           <select
             name="courier"
             defaultValue=""
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3"
+            className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3"
           >
             <option value="">— (opcional) —</option>
             {COURIERS.map((c) => (
@@ -188,19 +188,19 @@ export default function PackageForm({
 
       {/* Foto opcional con cámara */}
       <div>
-        <label className="block text-sm mb-1 text-zinc-400">Foto del paquete (opcional)</label>
+        <label className="block text-sm mb-1 text-zinc-700">Foto del paquete (opcional)</label>
         <div className="flex items-center gap-3">
           {photoUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="" className="w-20 h-20 rounded-lg object-cover bg-zinc-800" />
+              <img src={photoUrl} alt="" className="w-20 h-20 rounded-lg object-cover bg-zinc-100" />
               <button
                 type="button"
                 onClick={() => {
                   setPhotoUrl(null);
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="text-sm text-zinc-500 hover:text-rose-400"
+                className="text-sm text-zinc-700 hover:text-rose-700"
               >
                 Quitar
               </button>
@@ -211,11 +211,11 @@ export default function PackageForm({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={photoBusy}
-                className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                className="bg-zinc-100 hover:bg-zinc-200 px-4 py-2 rounded-lg text-sm disabled:opacity-50"
               >
                 {photoBusy ? "Subiendo…" : "📷 Sacar foto"}
               </button>
-              <span className="text-xs text-zinc-500">JPG / PNG / WEBP · máx 5MB</span>
+              <span className="text-xs text-zinc-700">JPG / PNG / WEBP · máx 5MB</span>
             </>
           )}
           <input
@@ -227,7 +227,7 @@ export default function PackageForm({
             className="hidden"
           />
         </div>
-        {photoError && <p className="text-rose-400 text-xs mt-1">{photoError}</p>}
+        {photoError && <p className="text-rose-700 text-xs mt-1">{photoError}</p>}
         <input type="hidden" name="photo_url" value={photoUrl ?? ""} />
       </div>
 
@@ -237,7 +237,7 @@ export default function PackageForm({
       <button
         type="submit"
         disabled={!selected || photoBusy || pending}
-        className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-xl disabled:opacity-50"
+        className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 rounded-xl disabled:opacity-50"
       >
         Registrar paquete
       </button>

@@ -52,13 +52,13 @@ export default async function AdminDashboard({
               <h2 className="text-xl font-bold">
                 {allDone ? "🎉 Tu barrio está listo" : "Configurá tu barrio en 3 pasos"}
               </h2>
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-zinc-700">
                 {allDone
                   ? "Ya completaste los pasos esenciales. Podés esconder este recuadro."
                   : "Mientras más pasos completes, antes podés empezar a usarlo de verdad."}
               </p>
             </div>
-            <div className="text-sm text-zinc-400">
+            <div className="text-sm text-zinc-700">
               {steps.filter((s) => s.done).length} de {steps.length}
             </div>
           </div>
@@ -69,13 +69,13 @@ export default async function AdminDashboard({
                 href={s.href}
                 className={`flex items-center gap-3 p-3 rounded-xl border ${
                   s.done
-                    ? "bg-emerald-900/30 border-emerald-700/40 text-zinc-300"
-                    : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800"
+                    ? "bg-emerald-900/30 border-emerald-700/40 text-zinc-700"
+                    : "bg-white border border-zinc-200 hover:bg-zinc-100"
                 }`}
               >
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                    s.done ? "bg-emerald-500 text-black" : "bg-zinc-700 text-zinc-300"
+                    s.done ? "bg-emerald-500 text-black" : "bg-zinc-200 text-zinc-700"
                   }`}
                 >
                   {s.done ? "✓" : idx + 1}
@@ -83,7 +83,7 @@ export default async function AdminDashboard({
                 <span className={`flex-1 font-medium ${s.done ? "line-through opacity-70" : ""}`}>
                   {s.label}
                 </span>
-                {!s.done && <span className="text-xs text-emerald-400">Ir →</span>}
+                {!s.done && <span className="text-xs text-emerald-700">Ir →</span>}
               </Link>
             ))}
           </div>
@@ -96,9 +96,9 @@ export default async function AdminDashboard({
         <Stat label="Autorizaciones vigentes" value={activeAuths ?? 0} />
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+      <div className="bg-white border border-zinc-200 rounded-2xl p-4">
         <h3 className="font-semibold mb-2 text-sm">Notificaciones del administrador</h3>
-        <p className="text-xs text-zinc-400 mb-3">
+        <p className="text-xs text-zinc-700 mb-3">
           Activá las notificaciones de este dispositivo para enterarte al instante cuando un
           guardia fuerza un ingreso o cambia el estado de tu suscripción.
         </p>
@@ -110,8 +110,8 @@ export default async function AdminDashboard({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-      <div className="text-zinc-400 text-sm mb-2">{label}</div>
+    <div className="bg-white border border-zinc-200 rounded-2xl p-6">
+      <div className="text-zinc-700 text-sm mb-2">{label}</div>
       <div className="text-4xl font-bold">{value}</div>
     </div>
   );

@@ -34,17 +34,17 @@ export default async function EditListingPage({
     <div>
       <Link
         href={`/admin/marketplace/${listing.id}`}
-        className="text-sm text-zinc-500 hover:text-zinc-300 inline-block mb-4"
+        className="text-sm text-zinc-700 hover:text-zinc-700 inline-block mb-4"
       >
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-2">
         Editar: {meta.emoji} {listing.name}
       </h1>
-      <p className="text-zinc-400 text-sm mb-6">{meta.label}</p>
+      <p className="text-zinc-700 text-sm mb-6">{meta.label}</p>
 
       {sp.error && (
-        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-300">
+        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-700">
           {decodeURIComponent(sp.error)}
         </div>
       )}

@@ -33,19 +33,19 @@ export default function FindOrgForm({ host }: { host: string }) {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-white p-6">
+    <main className="min-h-screen flex items-center justify-center bg-white text-zinc-900 p-6">
       <form onSubmit={onSubmit} className="w-full max-w-md space-y-4">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300 inline-block mb-2">
+        <Link href="/" className="text-sm text-zinc-700 hover:text-zinc-700 inline-block mb-2">
           ← Volver
         </Link>
         <h1 className="text-2xl font-bold">¿En qué barrio querés entrar?</h1>
-        <p className="text-zinc-400 text-sm">
+        <p className="text-zinc-700 text-sm">
           Escribí el subdominio de tu barrio. Te llevamos a la página de login.
         </p>
 
         <div>
-          <label className="block text-sm mb-1 text-zinc-400">Subdominio</label>
-          <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+          <label className="block text-sm mb-1 text-zinc-700">Subdominio</label>
+          <div className="flex items-center bg-white border border-zinc-200 rounded-lg overflow-hidden">
             <input
               type="text"
               value={slug}
@@ -57,23 +57,23 @@ export default function FindOrgForm({ host }: { host: string }) {
               placeholder="losalamos"
               className="flex-1 bg-transparent px-4 py-3 outline-none"
             />
-            <span className="text-zinc-500 pr-4 text-sm">.{rootDomain}</span>
+            <span className="text-zinc-700 pr-4 text-sm">.{rootDomain}</span>
           </div>
-          <p className="text-xs text-zinc-500 mt-1">
-            Ejemplo: si tu barrio es <code className="bg-zinc-900 px-1 rounded">{exampleUrl}</code>, escribí <code className="bg-zinc-900 px-1 rounded">test</code>.
+          <p className="text-xs text-zinc-700 mt-1">
+            Ejemplo: si tu barrio es <code className="bg-white border border-zinc-200 px-1 rounded">{exampleUrl}</code>, escribí <code className="bg-white border border-zinc-200 px-1 rounded">test</code>.
           </p>
         </div>
 
         <button
           type="submit"
-          className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-lg"
+          className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 rounded-lg"
         >
           Ir al login
         </button>
 
-        <div className="pt-4 border-t border-zinc-800 text-center text-sm text-zinc-500">
+        <div className="pt-4 border-t border-zinc-200 text-center text-sm text-zinc-700">
           ¿Todavía no tenés barrio?{" "}
-          <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-medium">
+          <Link href="/signup" className="text-emerald-700 hover:text-emerald-700 font-medium">
             Creá uno gratis
           </Link>
         </div>

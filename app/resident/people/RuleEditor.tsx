@@ -28,7 +28,7 @@ export default function RuleEditor({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-zinc-400 hover:text-white underline"
+        className="text-xs text-zinc-700 hover:text-zinc-900 underline"
       >
         {ruleEnabled ? "Editar horario permitido" : "Configurar horario permitido"}
       </button>
@@ -38,7 +38,7 @@ export default function RuleEditor({
   return (
     <form
       action={updatePersonRuleAction}
-      className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 space-y-3"
+      className="bg-white border border-zinc-200 rounded-lg p-3 space-y-3"
     >
       <input type="hidden" name="person_id" value={personId} />
 
@@ -53,17 +53,17 @@ export default function RuleEditor({
       </label>
 
       <div>
-        <label className="block text-xs text-zinc-400 mb-2">Días permitidos</label>
+        <label className="block text-xs text-zinc-700 mb-2">Días permitidos</label>
         <WeekdayPicker name="weekday_mask" defaultValue={weekdayMask} />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Desde</label>
+          <label className="block text-xs text-zinc-700 mb-1">Desde</label>
           <select
             name="start_hour"
             defaultValue={startHour}
-            className="w-full bg-zinc-900 rounded px-2 py-1.5 border border-zinc-800 text-sm"
+            className="w-full bg-white border border-zinc-200 rounded px-2 py-1.5 border border-zinc-200 text-sm"
           >
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i}>{String(i).padStart(2, "0")}:00</option>
@@ -71,11 +71,11 @@ export default function RuleEditor({
           </select>
         </div>
         <div>
-          <label className="block text-xs text-zinc-400 mb-1">Hasta</label>
+          <label className="block text-xs text-zinc-700 mb-1">Hasta</label>
           <select
             name="end_hour"
             defaultValue={endHour}
-            className="w-full bg-zinc-900 rounded px-2 py-1.5 border border-zinc-800 text-sm"
+            className="w-full bg-white border border-zinc-200 rounded px-2 py-1.5 border border-zinc-200 text-sm"
           >
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i}>{String(i).padStart(2, "0")}:59</option>
@@ -88,13 +88,13 @@ export default function RuleEditor({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="flex-1 text-sm bg-zinc-800 hover:bg-zinc-700 py-2 rounded"
+          className="flex-1 text-sm bg-zinc-100 hover:bg-zinc-200 py-2 rounded"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="flex-1 text-sm bg-emerald-600 hover:bg-emerald-500 font-semibold py-2 rounded"
+          className="flex-1 text-sm bg-blue-600 hover:bg-blue-500 font-semibold py-2 rounded"
         >
           Guardar
         </button>

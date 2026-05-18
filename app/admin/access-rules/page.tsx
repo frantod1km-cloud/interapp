@@ -35,12 +35,12 @@ export default async function AccessRulesPage({
   return (
     <div>
       <h1 className="text-2xl font-bold mb-2">Horario de empleados del barrio</h1>
-      <p className="text-zinc-400 text-sm mb-2">
+      <p className="text-zinc-700 text-sm mb-2">
         Configurá horarios para los empleados de la <strong>administración</strong>: personal de
         limpieza pública, mantenimiento, jardinería de áreas comunes, etc. Todos los que estén
         marcados como categoría <strong>Empleado del barrio</strong>.
       </p>
-      <p className="text-zinc-500 text-xs mb-6">
+      <p className="text-zinc-700 text-xs mb-6">
         Las personas que vienen a una casa específica (empleada doméstica, jardinero de un
         propietario, proveedor recurrente) las gestiona cada residente desde su propio panel.
         Cada uno define sus horarios.
@@ -52,7 +52,7 @@ export default async function AccessRulesPage({
         </div>
       )}
       {sp.error && (
-        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-300">
+        <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 mb-4 text-sm text-rose-700">
           {decodeURIComponent(sp.error)}
         </div>
       )}
@@ -63,8 +63,8 @@ export default async function AccessRulesPage({
           return (
             <div
               key={k.id}
-              className={`bg-zinc-900 border rounded-2xl p-5 ${
-                rule?.enabled ? "border-emerald-700/40" : "border-zinc-800"
+              className={`bg-white border rounded-2xl p-5 ${
+                rule?.enabled ? "border-emerald-700/40" : "border-zinc-200"
               }`}
             >
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -73,16 +73,16 @@ export default async function AccessRulesPage({
                 </h3>
                 {rule ? (
                   rule.enabled ? (
-                    <span className="text-xs bg-emerald-600/20 text-emerald-300 px-2 py-1 rounded">
+                    <span className="text-xs bg-emerald-600/20 text-emerald-700 px-2 py-1 rounded">
                       Activa · {describeRule(rule)}
                     </span>
                   ) : (
-                    <span className="text-xs bg-zinc-700/40 text-zinc-400 px-2 py-1 rounded">
+                    <span className="text-xs bg-zinc-200/40 text-zinc-700 px-2 py-1 rounded">
                       Sin restricción (deshabilitada)
                     </span>
                   )
                 ) : (
-                  <span className="text-xs bg-zinc-700/40 text-zinc-400 px-2 py-1 rounded">
+                  <span className="text-xs bg-zinc-200/40 text-zinc-700 px-2 py-1 rounded">
                     Sin regla — acceso libre
                   </span>
                 )}
@@ -92,17 +92,17 @@ export default async function AccessRulesPage({
                 <input type="hidden" name="kind" value={k.id} />
 
                 <div>
-                  <label className="block text-xs text-zinc-400 mb-2">Días permitidos</label>
+                  <label className="block text-xs text-zinc-700 mb-2">Días permitidos</label>
                   <WeekdayPicker name="weekday_mask" defaultValue={rule?.weekday_mask ?? 127} />
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs text-zinc-400 mb-1">Desde</label>
+                    <label className="block text-xs text-zinc-700 mb-1">Desde</label>
                     <select
                       name="start_hour"
                       defaultValue={rule?.start_hour ?? 0}
-                      className="w-full bg-zinc-950 rounded px-3 py-2 border border-zinc-800 text-sm"
+                      className="w-full bg-white rounded px-3 py-2 border border-zinc-200 text-sm"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>
@@ -112,11 +112,11 @@ export default async function AccessRulesPage({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-zinc-400 mb-1">Hasta</label>
+                    <label className="block text-xs text-zinc-700 mb-1">Hasta</label>
                     <select
                       name="end_hour"
                       defaultValue={rule?.end_hour ?? 23}
-                      className="w-full bg-zinc-950 rounded px-3 py-2 border border-zinc-800 text-sm"
+                      className="w-full bg-white rounded px-3 py-2 border border-zinc-200 text-sm"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>
@@ -139,14 +139,14 @@ export default async function AccessRulesPage({
                 </div>
 
                 <div className="flex gap-2">
-                  <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2 text-sm">
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-500 font-semibold rounded px-4 py-2 text-sm">
                     {rule ? "Actualizar regla" : "Guardar regla"}
                   </button>
                   {rule && (
                     <button
                       type="submit"
                       formAction={deleteRuleAction}
-                      className="bg-zinc-800 hover:bg-rose-700 rounded px-4 py-2 text-sm"
+                      className="bg-zinc-100 hover:bg-rose-700 rounded px-4 py-2 text-sm"
                     >
                       Quitar regla
                     </button>

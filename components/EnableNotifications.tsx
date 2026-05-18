@@ -100,14 +100,14 @@ export default function EnableNotifications({ vapidPublicKey }: { vapidPublicKey
   if (status === "checking") return null;
   if (status === "unsupported" || status === "no_vapid") {
     return (
-      <p className="text-xs text-zinc-600">
+      <p className="text-xs text-zinc-700">
         Tu navegador no soporta notificaciones, o el barrio no las tiene configuradas.
       </p>
     );
   }
   if (status === "denied") {
     return (
-      <p className="text-xs text-amber-400">
+      <p className="text-xs text-amber-700">
         Bloqueaste las notificaciones para este sitio. Habilitalas desde la configuración del navegador.
       </p>
     );
@@ -118,7 +118,7 @@ export default function EnableNotifications({ vapidPublicKey }: { vapidPublicKey
       <button
         onClick={disable}
         disabled={busy}
-        className="text-xs text-zinc-500 hover:text-rose-400 underline disabled:opacity-50"
+        className="text-xs text-zinc-700 hover:text-rose-700 underline disabled:opacity-50"
       >
         Desactivar notificaciones de visitas
       </button>

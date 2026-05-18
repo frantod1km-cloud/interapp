@@ -12,9 +12,9 @@ export default async function GuardPage() {
       <main className="min-h-screen flex items-center justify-center p-8 text-center">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Organización no encontrada</h1>
-          <p className="text-zinc-400">
+          <p className="text-zinc-700">
             Accedé desde el subdominio de tu barrio, ej:{" "}
-            <code className="bg-zinc-900 px-2 py-1 rounded">losalamos.interapp.com</code>
+            <code className="bg-white border border-zinc-200 px-2 py-1 rounded">losalamos.interapp.com</code>
           </p>
         </div>
       </main>

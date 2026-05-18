@@ -12,7 +12,7 @@ export default function AuthorizePage() {
 
   return (
     <div>
-      <Link href="/resident" className="text-sm text-zinc-500 hover:text-zinc-300 mb-4 inline-block">
+      <Link href="/resident" className="text-sm text-zinc-700 hover:text-zinc-700 mb-4 inline-block">
         ← Volver
       </Link>
       <h1 className="text-2xl font-bold mb-6">Autorizar visita</h1>
@@ -20,7 +20,7 @@ export default function AuthorizePage() {
         <Field label="DNI del visitante" name="dni" type="text" inputMode="numeric" required autoFocus />
         <Field label="Nombre (opcional)" name="visitor_name" />
         <Field label="Válido hasta" name="valid_until" type="datetime-local" defaultValue={localIso} required />
-        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-4 rounded-2xl">
+        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-4 rounded-2xl">
           Autorizar
         </button>
       </form>
@@ -31,8 +31,8 @@ export default function AuthorizePage() {
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
-      <label className="block text-sm mb-1 text-zinc-400">{label}</label>
-      <input {...props} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3" />
+      <label className="block text-sm mb-1 text-zinc-700">{label}</label>
+      <input {...props} className="w-full bg-white border border-zinc-200 rounded-lg px-4 py-3" />
     </div>
   );
 }

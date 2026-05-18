@@ -3,7 +3,7 @@ import { PUBLIC_PLAN_IDS, PLANS, formatPrice } from "@/lib/plans";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-white text-zinc-900">
       <Header />
       <Hero />
       <Problem />
@@ -23,24 +23,24 @@ export default function Landing() {
 // ===========================================================================
 function Header() {
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-900">
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-zinc-200">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-xl font-bold tracking-tight">
           interapp
         </Link>
-        <nav className="hidden sm:flex items-center gap-6 text-sm text-zinc-400">
-          <a href="#features" className="hover:text-white">Funciones</a>
-          <a href="#como-funciona" className="hover:text-white">Cómo funciona</a>
-          <a href="#precios" className="hover:text-white">Precios</a>
-          <a href="#faq" className="hover:text-white">FAQ</a>
+        <nav className="hidden sm:flex items-center gap-6 text-sm text-zinc-700">
+          <a href="#features" className="hover:text-zinc-900">Funciones</a>
+          <a href="#como-funciona" className="hover:text-zinc-900">Cómo funciona</a>
+          <a href="#precios" className="hover:text-zinc-900">Precios</a>
+          <a href="#faq" className="hover:text-zinc-900">FAQ</a>
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/login" className="text-sm text-zinc-300 hover:text-white px-3 py-1.5">
+          <Link href="/login" className="text-sm text-zinc-700 hover:text-zinc-900 px-3 py-1.5">
             Ingresar
           </Link>
           <Link
             href="/signup"
-            className="bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold px-4 py-1.5 rounded-lg"
+            className="bg-blue-600 hover:bg-blue-500 text-sm font-semibold px-4 py-1.5 rounded-lg"
           >
             Crear barrio
           </Link>
@@ -60,14 +60,14 @@ function Hero() {
       <div className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 mb-6">
               🇦🇷 Pensado para barrios privados argentinos
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-6">
               Control de accesos que tu guardia entiende{" "}
-              <span className="text-emerald-400">en 2 segundos</span>.
+              <span className="text-emerald-700">en 2 segundos</span>.
             </h1>
-            <p className="text-lg text-zinc-300 mb-8 max-w-xl">
+            <p className="text-lg text-zinc-700 mb-8 max-w-xl">
               Escanea el DNI con cualquier pistola USB, ve quién está autorizado,
               registra la entrada en un toque. Funciona aunque se caiga internet.
               Sin planillas, sin WhatsApp, sin errores.
@@ -75,18 +75,18 @@ function Hero() {
             <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <Link
                 href="/signup"
-                className="bg-emerald-600 hover:bg-emerald-500 font-semibold px-6 py-3.5 rounded-xl text-center"
+                className="bg-blue-600 hover:bg-blue-500 font-semibold px-6 py-3.5 rounded-xl text-center"
               >
                 Probar gratis 30 días
               </Link>
               <a
                 href="#como-funciona"
-                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 font-semibold px-6 py-3.5 rounded-xl text-center"
+                className="bg-white border border-zinc-200 hover:bg-zinc-100 border border-zinc-200 font-semibold px-6 py-3.5 rounded-xl text-center"
               >
                 Ver cómo funciona
               </a>
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-700">
               Sin tarjeta · Sin instalación · 5 minutos para empezar
             </p>
           </div>
@@ -105,12 +105,12 @@ function GuardScreenMock() {
   return (
     <div className="relative">
       <div className="absolute -inset-4 bg-gradient-to-br from-emerald-500/20 to-sky-500/20 blur-2xl rounded-3xl" />
-      <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 px-4 py-2 bg-black/40 border-b border-zinc-800">
+      <div className="relative bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex items-center gap-2 px-4 py-2 bg-black/40 border-b border-zinc-200">
           <div className="w-2 h-2 rounded-full bg-rose-500" />
           <div className="w-2 h-2 rounded-full bg-amber-500" />
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          <div className="flex-1 text-center text-xs text-zinc-500">losalamos.interapp.com/guard</div>
+          <div className="flex-1 text-center text-xs text-zinc-700">losalamos.interapp.com/guard</div>
         </div>
         <div className="bg-emerald-600 p-10 text-center">
           <div className="text-7xl mb-4">✅</div>
@@ -157,14 +157,14 @@ function Problem() {
     },
   ];
   return (
-    <section className="py-20 border-t border-zinc-900">
+    <section className="py-20 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-3xl mb-12">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">EL PROBLEMA</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">EL PROBLEMA</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Tu barrio merece algo mejor que esto.
           </h2>
-          <p className="text-zinc-400 text-lg">
+          <p className="text-zinc-700 text-lg">
             La mayoría de los barrios privados, countries y edificios siguen anotando ingresos en
             papel o coordinando autorizaciones por WhatsApp. Resultado: errores, demoras y cero
             trazabilidad cuando hace falta.
@@ -172,10 +172,10 @@ function Problem() {
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {pains.map((p) => (
-            <div key={p.title} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div key={p.title} className="bg-white border border-zinc-200 rounded-2xl p-6">
               <div className="text-4xl mb-3">{p.icon}</div>
               <h3 className="font-bold mb-2">{p.title}</h3>
-              <p className="text-sm text-zinc-400">{p.body}</p>
+              <p className="text-sm text-zinc-700">{p.body}</p>
             </div>
           ))}
         </div>
@@ -236,14 +236,14 @@ function Features() {
     },
   ];
   return (
-    <section id="features" className="py-20 border-t border-zinc-900">
+    <section id="features" className="py-20 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-3xl mb-12">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">FUNCIONES</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">FUNCIONES</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Todo lo que tu barrio necesita, sin la fricción.
           </h2>
-          <p className="text-zinc-400 text-lg">
+          <p className="text-zinc-700 text-lg">
             Diseñado con el guardia en mente. La interfaz se aprende en 5 minutos y la operación
             diaria se mide en segundos.
           </p>
@@ -252,11 +252,11 @@ function Features() {
           {items.map((f) => (
             <div
               key={f.title}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-emerald-500/30 transition-colors"
+              className="bg-white border border-zinc-200 rounded-2xl p-6 hover:border-emerald-500/30 transition-colors"
             >
               <div className="text-3xl mb-3">{f.icon}</div>
               <h3 className="font-bold mb-2">{f.title}</h3>
-              <p className="text-sm text-zinc-400">{f.body}</p>
+              <p className="text-sm text-zinc-700">{f.body}</p>
             </div>
           ))}
         </div>
@@ -287,22 +287,22 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="como-funciona" className="py-20 border-t border-zinc-900">
+    <section id="como-funciona" className="py-20 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-3xl mb-12">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">CÓMO FUNCIONA</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">CÓMO FUNCIONA</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">De cero a operativo en una tarde.</h2>
         </div>
         <div className="grid sm:grid-cols-3 gap-6 relative">
           {/* Línea conectora */}
           <div className="hidden sm:block absolute top-8 left-[16%] right-[16%] h-px bg-gradient-to-r from-emerald-500/0 via-emerald-500/40 to-emerald-500/0" />
           {steps.map((s) => (
-            <div key={s.n} className="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div key={s.n} className="relative bg-white border border-zinc-200 rounded-2xl p-6">
               <div className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-2xl font-bold mb-4 mx-auto">
                 {s.n}
               </div>
               <h3 className="font-bold text-lg mb-2 text-center">{s.title}</h3>
-              <p className="text-sm text-zinc-400 text-center">{s.body}</p>
+              <p className="text-sm text-zinc-700 text-center">{s.body}</p>
             </div>
           ))}
         </div>
@@ -351,14 +351,14 @@ function ForEachRole() {
     },
   ];
   return (
-    <section className="py-20 border-t border-zinc-900">
+    <section className="py-20 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-3xl mb-12">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">DISEÑADO PARA TODOS</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">DISEÑADO PARA TODOS</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Una experiencia distinta para cada rol.
           </h2>
-          <p className="text-zinc-400 text-lg">
+          <p className="text-zinc-700 text-lg">
             El guardia no ve el panel admin. El residente no ve los datos de otros vecinos.
             Cada uno entra a lo que necesita y nada más.
           </p>
@@ -367,7 +367,7 @@ function ForEachRole() {
           {roles.map((r) => (
             <div
               key={r.title}
-              className={`relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 overflow-hidden`}
+              className={`relative bg-white border border-zinc-200 rounded-2xl p-6 overflow-hidden`}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${r.color} to-transparent pointer-events-none`} />
               <div className="relative">
@@ -375,8 +375,8 @@ function ForEachRole() {
                 <h3 className="font-bold text-lg mb-4">{r.title}</h3>
                 <ul className="space-y-2">
                   {r.bullets.map((b) => (
-                    <li key={b} className="text-sm text-zinc-300 flex gap-2">
-                      <span className="text-emerald-400">✓</span> {b}
+                    <li key={b} className="text-sm text-zinc-700 flex gap-2">
+                      <span className="text-emerald-700">✓</span> {b}
                     </li>
                   ))}
                 </ul>
@@ -394,14 +394,14 @@ function ForEachRole() {
 // ===========================================================================
 function Pricing() {
   return (
-    <section id="precios" className="py-20 border-t border-zinc-900">
+    <section id="precios" className="py-20 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-3xl mb-12 text-center mx-auto">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">PRECIOS</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">PRECIOS</div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Empezás gratis. Cambiás o cancelás cuando quieras.
           </h2>
-          <p className="text-zinc-400 text-lg">
+          <p className="text-zinc-700 text-lg">
             Pagás por mes con Mercado Pago. Sin permanencia, sin sorpresas, sin costos de
             instalación.
           </p>
@@ -413,8 +413,8 @@ function Pricing() {
             return (
               <div
                 key={id}
-                className={`relative bg-zinc-900 border rounded-2xl p-6 flex flex-col ${
-                  featured ? "border-emerald-500/50 ring-2 ring-emerald-500/20" : "border-zinc-800"
+                className={`relative bg-white border rounded-2xl p-6 flex flex-col ${
+                  featured ? "border-emerald-500/50 ring-2 ring-emerald-500/20" : "border-zinc-200"
                 }`}
               >
                 {featured && (
@@ -422,20 +422,20 @@ function Pricing() {
                     MÁS POPULAR
                   </div>
                 )}
-                <div className="text-xs uppercase tracking-wider text-zinc-500 mb-1">{plan.name}</div>
+                <div className="text-xs uppercase tracking-wider text-zinc-700 mb-1">{plan.name}</div>
                 <div className="text-3xl font-bold mb-2">{formatPrice(plan)}</div>
-                <p className="text-sm text-zinc-400 mb-4 min-h-[2.5rem]">{plan.description}</p>
-                <ul className="text-sm text-zinc-300 space-y-2 mb-6 flex-1">
+                <p className="text-sm text-zinc-700 mb-4 min-h-[2.5rem]">{plan.description}</p>
+                <ul className="text-sm text-zinc-700 space-y-2 mb-6 flex-1">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2">
-                      <span className="text-emerald-400">✓</span> {f}
+                      <span className="text-emerald-700">✓</span> {f}
                     </li>
                   ))}
                 </ul>
                 {id === "enterprise" ? (
                   <a
                     href="mailto:ventas@interapp.com?subject=Enterprise"
-                    className="bg-zinc-800 hover:bg-zinc-700 text-center font-semibold py-3 rounded-xl"
+                    className="bg-zinc-100 hover:bg-zinc-200 text-center font-semibold py-3 rounded-xl"
                   >
                     Hablar con ventas
                   </a>
@@ -444,8 +444,8 @@ function Pricing() {
                     href={`/signup/create?plan=${id}`}
                     className={`text-center font-semibold py-3 rounded-xl ${
                       featured
-                        ? "bg-emerald-600 hover:bg-emerald-500"
-                        : "bg-zinc-800 hover:bg-zinc-700"
+                        ? "bg-blue-600 hover:bg-blue-500"
+                        : "bg-zinc-100 hover:bg-zinc-200"
                     }`}
                   >
                     {plan.ctaLabel}
@@ -455,7 +455,7 @@ function Pricing() {
             );
           })}
         </div>
-        <p className="text-center text-xs text-zinc-500 mt-6">
+        <p className="text-center text-xs text-zinc-700 mt-6">
           Todos los planes incluyen actualizaciones automáticas, backups diarios y soporte.
         </p>
       </div>
@@ -498,25 +498,25 @@ function Faq() {
     },
   ];
   return (
-    <section id="faq" className="py-20 border-t border-zinc-900">
+    <section id="faq" className="py-20 border-t border-zinc-200">
       <div className="max-w-3xl mx-auto px-6">
         <div className="mb-12 text-center">
-          <div className="text-emerald-400 text-sm font-semibold mb-3">PREGUNTAS FRECUENTES</div>
+          <div className="text-emerald-700 text-sm font-semibold mb-3">PREGUNTAS FRECUENTES</div>
           <h2 className="text-3xl sm:text-4xl font-bold">Lo que nos preguntan más seguido.</h2>
         </div>
         <div className="space-y-3">
           {items.map((it) => (
             <details
               key={it.q}
-              className="group bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
+              className="group bg-white border border-zinc-200 rounded-2xl overflow-hidden"
             >
               <summary className="cursor-pointer p-5 font-semibold flex items-center justify-between gap-4 list-none">
                 {it.q}
-                <span className="text-emerald-400 text-xl transition-transform group-open:rotate-45">
+                <span className="text-emerald-700 text-xl transition-transform group-open:rotate-45">
                   +
                 </span>
               </summary>
-              <div className="px-5 pb-5 text-zinc-400 text-sm leading-relaxed">{it.a}</div>
+              <div className="px-5 pb-5 text-zinc-700 text-sm leading-relaxed">{it.a}</div>
             </details>
           ))}
         </div>
@@ -530,30 +530,30 @@ function Faq() {
 // ===========================================================================
 function FinalCta() {
   return (
-    <section className="py-20 border-t border-zinc-900">
+    <section className="py-20 border-t border-zinc-200">
       <div className="max-w-4xl mx-auto px-6">
         <div className="bg-gradient-to-br from-emerald-900/40 via-zinc-900 to-sky-900/30 border border-emerald-500/20 rounded-3xl p-10 sm:p-16 text-center">
           <h2 className="text-3xl sm:text-5xl font-bold mb-4">
             Tu barrio puede empezar mañana.
           </h2>
-          <p className="text-lg text-zinc-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-zinc-700 mb-8 max-w-2xl mx-auto">
             30 días gratis para probarlo con tu equipo. Si funciona, seguís. Si no, no pasa nada.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/signup"
-              className="bg-emerald-600 hover:bg-emerald-500 font-semibold px-8 py-4 rounded-xl"
+              className="bg-blue-600 hover:bg-blue-500 font-semibold px-8 py-4 rounded-xl"
             >
               Crear mi barrio gratis
             </Link>
             <a
               href="mailto:ventas@interapp.com"
-              className="bg-zinc-800 hover:bg-zinc-700 font-semibold px-8 py-4 rounded-xl"
+              className="bg-zinc-100 hover:bg-zinc-200 font-semibold px-8 py-4 rounded-xl"
             >
               Hablar con ventas
             </a>
           </div>
-          <p className="text-xs text-zinc-500 mt-6">
+          <p className="text-xs text-zinc-700 mt-6">
             Sin tarjeta de crédito · Sin instalación · Soporte en español
           </p>
         </div>
@@ -567,14 +567,14 @@ function FinalCta() {
 // ===========================================================================
 function Footer() {
   return (
-    <footer className="border-t border-zinc-900 py-10 mt-10">
-      <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-zinc-500">
-        <div className="font-bold text-white">interapp</div>
+    <footer className="border-t border-zinc-200 py-10 mt-10">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-zinc-700">
+        <div className="font-bold text-zinc-900">interapp</div>
         <div className="flex gap-6">
-          <a href="#features" className="hover:text-white">Funciones</a>
-          <a href="#precios" className="hover:text-white">Precios</a>
-          <a href="#faq" className="hover:text-white">FAQ</a>
-          <a href="mailto:soporte@interapp.com" className="hover:text-white">Soporte</a>
+          <a href="#features" className="hover:text-zinc-900">Funciones</a>
+          <a href="#precios" className="hover:text-zinc-900">Precios</a>
+          <a href="#faq" className="hover:text-zinc-900">FAQ</a>
+          <a href="mailto:soporte@interapp.com" className="hover:text-zinc-900">Soporte</a>
         </div>
         <div>© {new Date().getFullYear()} interapp</div>
       </div>

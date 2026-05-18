@@ -25,7 +25,7 @@ export default async function SupervisionPage({
   const role = await getCurrentMemberRole(org.id);
   if (role !== "guard_lead" && role !== "org_admin") {
     return (
-      <main className="min-h-screen flex items-center justify-center p-8 bg-zinc-950 text-white">
+      <main className="min-h-screen flex items-center justify-center p-8 bg-white text-zinc-900">
         <p>Esta sección es para jefes de guardia.</p>
       </main>
     );
@@ -108,16 +108,16 @@ export default async function SupervisionPage({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6">
+    <div className="min-h-screen bg-white text-zinc-900 p-6">
       <header className="flex items-center justify-between mb-6 max-w-5xl mx-auto">
         <div>
-          <Link href="/guard" className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/guard" className="text-sm text-zinc-700 hover:text-zinc-700">
             ← Volver al control
           </Link>
           <h1 className="text-2xl font-bold mt-1">Supervisión — {org.name}</h1>
         </div>
         <form action="/api/logout" method="post">
-          <button className="text-sm text-zinc-500 hover:text-white">Salir</button>
+          <button className="text-sm text-zinc-700 hover:text-zinc-900">Salir</button>
         </form>
       </header>
 
@@ -140,28 +140,28 @@ export default async function SupervisionPage({
           </div>
         )}
         {sp.error && (
-          <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 text-sm text-rose-300">
+          <div className="bg-rose-700/20 border border-rose-700/40 rounded-2xl p-4 text-sm text-rose-700">
             {decodeURIComponent(sp.error)}
           </div>
         )}
 
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <section className="bg-white border border-zinc-200 rounded-2xl p-5">
           <h2 className="font-bold mb-3">Crear nuevo guardia</h2>
           <form action={createGuardAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <input name="full_name" placeholder="Nombre y apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-            <input name="email" type="email" placeholder="Email" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-            <input name="password" type="text" placeholder="Contraseña (mín. 8)" required minLength={8} className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
+            <input name="full_name" placeholder="Nombre y apellido" required className="bg-white rounded px-3 py-2 border border-zinc-200" />
+            <input name="email" type="email" placeholder="Email" required className="bg-white rounded px-3 py-2 border border-zinc-200" />
+            <input name="password" type="text" placeholder="Contraseña (mín. 8)" required minLength={8} className="bg-white rounded px-3 py-2 border border-zinc-200" />
+            <button type="submit" className="bg-blue-600 hover:bg-blue-500 font-semibold rounded px-4 py-2">
               Crear
             </button>
           </form>
         </section>
 
         {/* Lista de guardias */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <header className="px-5 py-3 bg-zinc-950 font-bold">Mis guardias</header>
+        <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <header className="px-5 py-3 bg-white font-bold">Mis guardias</header>
           <table className="w-full text-sm">
-            <thead className="bg-zinc-950 text-zinc-400 text-left">
+            <thead className="bg-white text-zinc-700 text-left">
               <tr>
                 <th className="px-5 py-2">Nombre</th>
                 <th className="px-5 py-2">Email</th>
@@ -172,17 +172,17 @@ export default async function SupervisionPage({
             </thead>
             <tbody>
               {guards.map((g) => (
-                <tr key={g.id} className="border-t border-zinc-800">
+                <tr key={g.id} className="border-t border-zinc-200">
                   <td className="px-5 py-3 font-medium">{g.name || "—"}</td>
-                  <td className="px-5 py-3 text-zinc-400">{g.email}</td>
+                  <td className="px-5 py-3 text-zinc-700">{g.email}</td>
                   <td className="px-5 py-3">
                     {g.role === "guard_lead" ? (
-                      <span className="text-amber-400 text-xs font-bold">JEFE</span>
+                      <span className="text-amber-700 text-xs font-bold">JEFE</span>
                     ) : (
-                      <span className="text-zinc-500 text-xs">guardia</span>
+                      <span className="text-zinc-700 text-xs">guardia</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-zinc-400">
+                  <td className="px-5 py-3 text-zinc-700">
                     {g.lastSeen ? (
                       new Date(g.lastSeen).toLocaleString("es-AR", {
                         day: "2-digit",
@@ -191,14 +191,14 @@ export default async function SupervisionPage({
                         minute: "2-digit",
                       })
                     ) : (
-                      <span className="text-zinc-600">—</span>
+                      <span className="text-zinc-700">—</span>
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
                     {g.role === "guard" && (
                       <form action={removeGuardAction} className="inline">
                         <input type="hidden" name="member_id" value={g.id} />
-                        <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-700">
+                        <button className="text-xs px-3 py-1 rounded bg-zinc-100 hover:bg-rose-700">
                           Dar de baja
                         </button>
                       </form>
@@ -208,7 +208,7 @@ export default async function SupervisionPage({
               ))}
               {guards.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-zinc-500">
+                  <td colSpan={5} className="px-5 py-8 text-center text-zinc-700">
                     Sin guardias todavía.
                   </td>
                 </tr>
@@ -218,17 +218,17 @@ export default async function SupervisionPage({
         </section>
 
         {/* Ingresos forzados últimas 24h */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <header className="px-5 py-3 bg-zinc-950 font-bold flex items-center gap-2">
+        <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+          <header className="px-5 py-3 bg-white font-bold flex items-center gap-2">
             <span>⚠️ Ingresos forzados (últimas 24 horas)</span>
           </header>
           {(forcedResp.data ?? []).length === 0 ? (
-            <p className="px-5 py-6 text-center text-zinc-500 text-sm">
+            <p className="px-5 py-6 text-center text-zinc-700 text-sm">
               No hubo ingresos forzados.
             </p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-zinc-950 text-zinc-400 text-left">
+              <thead className="bg-white text-zinc-700 text-left">
                 <tr>
                   <th className="px-5 py-2">Hora</th>
                   <th className="px-5 py-2">DNI</th>
@@ -240,7 +240,7 @@ export default async function SupervisionPage({
               </thead>
               <tbody>
                 {forcedResp.data!.map((f) => (
-                  <tr key={f.id} className="border-t border-zinc-800">
+                  <tr key={f.id} className="border-t border-zinc-200">
                     <td className="px-5 py-3 tabular-nums">
                       {new Date(f.occurred_at).toLocaleString("es-AR", {
                         day: "2-digit",
@@ -251,11 +251,11 @@ export default async function SupervisionPage({
                     </td>
                     <td className="px-5 py-3 tabular-nums">{formatDni(f.dni)}</td>
                     <td className="px-5 py-3">{f.full_name ?? "—"}</td>
-                    <td className="px-5 py-3 text-zinc-400">{f.gate_label ?? "—"}</td>
-                    <td className="px-5 py-3 text-zinc-400">
+                    <td className="px-5 py-3 text-zinc-700">{f.gate_label ?? "—"}</td>
+                    <td className="px-5 py-3 text-zinc-700">
                       {f.guard_id ? guardEmails.get(f.guard_id) ?? "—" : "—"}
                     </td>
-                    <td className="px-5 py-3 text-zinc-500">{f.reason ?? "—"}</td>
+                    <td className="px-5 py-3 text-zinc-700">{f.reason ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -276,10 +276,10 @@ function Stat({
   value: number;
   highlight?: "amber" | null;
 }) {
-  const cls = highlight === "amber" ? "border-amber-600/50 bg-amber-900/20" : "border-zinc-800 bg-zinc-900";
+  const cls = highlight === "amber" ? "border-amber-600/50 bg-amber-900/20" : "border-zinc-200 bg-white border border-zinc-200";
   return (
     <div className={`rounded-2xl p-5 border ${cls}`}>
-      <div className="text-zinc-400 text-xs mb-1">{label}</div>
+      <div className="text-zinc-700 text-xs mb-1">{label}</div>
       <div className="text-3xl font-bold tabular-nums">{value}</div>
     </div>
   );

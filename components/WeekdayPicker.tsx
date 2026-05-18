@@ -52,8 +52,8 @@ export default function WeekdayPicker({
               onClick={() => toggle(d.idx)}
               className={`text-xs font-bold w-12 py-2 rounded transition ${
                 on
-                  ? "bg-emerald-600 text-white shadow"
-                  : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                  ? "bg-emerald-600 text-zinc-900 shadow"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
               }`}
               aria-pressed={on}
             >
@@ -63,13 +63,13 @@ export default function WeekdayPicker({
         })}
       </div>
       <div className="flex gap-1 flex-wrap">
-        <span className="text-xs text-zinc-500 self-center mr-1">Atajos:</span>
+        <span className="text-xs text-zinc-700 self-center mr-1">Atajos:</span>
         {PRESETS.map((p) => (
           <button
             key={p.label}
             type="button"
             onClick={() => setMask(p.mask)}
-            className="text-xs px-2 py-1 rounded bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            className="text-xs px-2 py-1 rounded bg-zinc-100/60 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-900"
           >
             {p.label}
           </button>
