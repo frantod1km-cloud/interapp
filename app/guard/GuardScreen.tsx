@@ -440,14 +440,88 @@ export default function GuardScreen({
   );
 }
 
+type DashboardStats = {
+  ingressesToday: number;
+  pendingPackages: number;
+  reservationsToday: number;
+  activeAuths: number;
+};
+
 function IdleView() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const r = await fetch("/api/guard/dashboard", { cache: "no-store" });
+        if (r.ok) setStats(await r.json());
+      } catch {
+        // ignoramos errores, mostramos sin stats
+      }
+    };
+    fetchStats();
+    const t = setInterval(fetchStats, 60_000); // refrescar cada minuto
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <div>
-      <div className="text-7xl mb-6">📷</div>
-      <h1 className="text-4xl font-bold mb-3">Escaneá el DNI</h1>
-      <p className="text-xl text-zinc-400">o tipeá el número y presioná Enter</p>
+    <div className="w-full max-w-3xl">
+      <div className="text-center mb-10">
+        <div className="text-7xl mb-6">📷</div>
+        <h1 className="text-4xl font-bold mb-3">Escaneá el DNI</h1>
+        <p className="text-xl text-zinc-400">o tipeá el número y presioná Enter</p>
+      </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <IdleStat label="Ingresos hoy" value={stats.ingressesToday} icon="🚪" />
+          <IdleStat
+            label="Paquetes esperando"
+            value={stats.pendingPackages}
+            icon="📦"
+            href={stats.pendingPackages > 0 ? "/guard/package" : undefined}
+            highlight={stats.pendingPackages > 0}
+          />
+          <IdleStat
+            label="Reservas hoy"
+            value={stats.reservationsToday}
+            icon="🛒"
+            highlight={stats.reservationsToday > 0}
+          />
+          <IdleStat label="Visitas vigentes" value={stats.activeAuths} icon="✋" />
+        </div>
+      )}
     </div>
   );
+}
+
+function IdleStat({
+  label,
+  value,
+  icon,
+  href,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  icon: string;
+  href?: string;
+  highlight?: boolean;
+}) {
+  const content = (
+    <div
+      className={`rounded-xl p-4 text-left transition ${
+        highlight
+          ? "bg-sky-600/20 border border-sky-500/40 hover:bg-sky-600/30"
+          : "bg-zinc-900/60 border border-zinc-800"
+      } ${href ? "hover:scale-[1.02] cursor-pointer" : ""}`}
+    >
+      <div className="text-2xl mb-1">{icon}</div>
+      <div className="text-3xl font-bold tabular-nums">{value}</div>
+      <div className="text-xs text-zinc-400 mt-1">{label}</div>
+    </div>
+  );
+  return href ? <a href={href}>{content}</a> : content;
 }
 
 function CheckingView({ raw }: { raw: string }) {
@@ -509,7 +583,7 @@ function ResultView({
           </div>
         )}
         {result.pendingPackages && result.pendingPackages > 0 ? (
-          <div className="bg-sky-600 rounded-xl px-4 py-3 mb-4 inline-flex items-center gap-3 text-left text-white font-bold">
+          <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>
             <span>
               Tiene {result.pendingPackages} paquete{result.pendingPackages > 1 ? "s" : ""} esperando.{" "}
@@ -519,6 +593,41 @@ function ResultView({
             </span>
           </div>
         ) : null}
+
+        {result.reservations && result.reservations.length > 0 ? (
+          <div className="bg-violet-600 rounded-xl px-4 py-3 mb-3 inline-block text-left text-white">
+            <div className="font-bold flex items-center gap-2 mb-1">
+              <span className="text-xl">🛒</span> Reservas hoy
+            </div>
+            <div className="space-y-1 text-sm">
+              {result.reservations.map((r) => {
+                const start = new Date(r.starts_at);
+                const end = new Date(r.ends_at);
+                const same = start.toDateString() === end.toDateString();
+                return (
+                  <div key={r.id} className="font-semibold">
+                    {r.listing_kind === "event" ? "🎉" : "🏛️"} {r.listing_name} ·{" "}
+                    {start.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                    {same &&
+                      ` a ${end.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
+                    {r.status === "pending_payment" && (
+                      <span className="ml-2 text-xs bg-amber-300 text-amber-900 px-1.5 py-0.5 rounded font-normal">
+                        sin pagar
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {result.lastEvent && (
+          <div className="text-xs opacity-70 mt-2">
+            Última {result.lastEvent.direction === "in" ? "entrada" : "salida"}:{" "}
+            {formatLastSeen(result.lastEvent.occurred_at)}
+          </div>
+        )}
         {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
         <div>
           <button
@@ -620,4 +729,32 @@ function ErrorView({ message, onDismiss }: { message: string; onDismiss: () => v
       </button>
     </div>
   );
+}
+
+// Formatea una fecha ISO como tiempo legible: "hoy 14:30", "ayer 22:00",
+// "lun 12/05 10:00", etc.
+function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const isSameDay =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  if (isSameDay) return `hoy ${time}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear()
+  ) {
+    return `ayer ${time}`;
+  }
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
