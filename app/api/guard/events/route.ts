@@ -25,6 +25,9 @@ type IncomingEvent = {
   gate_id?: string | null;
   gate_label?: string | null;
   vehicle_plate?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_color?: string | null;
   companions?: number;
   notes?: string | null;
 };
@@ -63,6 +66,9 @@ export async function POST(req: Request) {
     gate_id: e.gate_id ?? null,
     gate_label: e.gate_label ?? null,
     vehicle_plate: e.vehicle_plate ?? null,
+    vehicle_make: e.vehicle_make?.trim() || null,
+    vehicle_model: e.vehicle_model?.trim() || null,
+    vehicle_color: e.vehicle_color?.trim() || null,
     companions: typeof e.companions === "number" && e.companions >= 0 ? e.companions : 0,
     notes: e.notes?.trim() || null,
     occurred_at: e.occurred_at,

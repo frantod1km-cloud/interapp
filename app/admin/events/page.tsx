@@ -38,7 +38,7 @@ export default async function EventsPage({
 
   let query = supabase
     .from("access_events")
-    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, companions, notes, gate_label")
+    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", range.from.toISOString())
     .lte("occurred_at", range.to.toISOString())
@@ -127,7 +127,20 @@ export default async function EventsPage({
                   </td>
                   <td className={`px-4 py-3 font-medium ${r.className}`}>{r.label}</td>
                   <td className="px-4 py-3 font-mono text-zinc-400">
-                    {e.vehicle_plate ?? <span className="text-zinc-600">🚶</span>}
+                    {e.vehicle_plate ? (
+                      <>
+                        <div className="font-bold">{e.vehicle_plate}</div>
+                        {(e.vehicle_make || e.vehicle_model || e.vehicle_color) && (
+                          <div className="text-xs font-sans text-zinc-500">
+                            {[e.vehicle_make, e.vehicle_model, e.vehicle_color]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-zinc-600">🚶</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums">
                     {e.companions > 0 ? (

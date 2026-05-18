@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: events } = await supabase
     .from("access_events")
-    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate, companions, notes, gate_label")
+    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", from.toISOString())
     .lte("occurred_at", to.toISOString())
@@ -51,6 +51,9 @@ export async function GET(req: Request) {
     "sentido",
     "resultado",
     "patente",
+    "marca",
+    "modelo",
+    "color",
     "acompañantes",
     "nota",
     "motivo",
@@ -63,6 +66,9 @@ export async function GET(req: Request) {
     e.direction === "in" ? "entrada" : "salida",
     e.result,
     e.vehicle_plate,
+    e.vehicle_make,
+    e.vehicle_model,
+    e.vehicle_color,
     String(e.companions ?? 0),
     e.notes,
     e.reason,

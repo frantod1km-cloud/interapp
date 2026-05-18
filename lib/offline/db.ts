@@ -71,6 +71,9 @@ export type QueuedEvent = {
   gate_id: string | null;
   gate_label: string | null;
   vehicle_plate: string | null;
+  vehicle_make: string | null;
+  vehicle_model: string | null;
+  vehicle_color: string | null;
   companions: number;         // 0 = solo el titular; N = N personas más
   notes: string | null;       // texto libre opcional
 };

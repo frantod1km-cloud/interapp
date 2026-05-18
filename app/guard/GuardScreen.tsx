@@ -56,8 +56,12 @@ export default function GuardScreen({
   const [showSearch, setShowSearch] = useState(false);
   const [selectedPlate, setSelectedPlate] = useState<string>("");
   const [customPlate, setCustomPlate] = useState<string>("");
+  const [customMake, setCustomMake] = useState<string>("");
+  const [customModel, setCustomModel] = useState<string>("");
+  const [customColor, setCustomColor] = useState<string>("");
   const [companions, setCompanions] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
+  const [visitorName, setVisitorName] = useState<string>("");
 
   const currentGate = gates.find((g) => g.id === gateId) ?? null;
 
@@ -184,13 +188,21 @@ export default function GuardScreen({
       const vs = screen.result.vehicles ?? [];
       setSelectedPlate(vs.length === 1 ? vs[0].plate : "");
       setCustomPlate("");
+      setCustomMake("");
+      setCustomModel("");
+      setCustomColor("");
       setCompanions(0);
       setNotes("");
+      setVisitorName("");
     } else if (screen.kind !== "result") {
       setSelectedPlate("");
       setCustomPlate("");
+      setCustomMake("");
+      setCustomModel("");
+      setCustomColor("");
       setCompanions(0);
       setNotes("");
+      setVisitorName("");
     }
   }, [screen]);
 
@@ -281,19 +293,28 @@ export default function GuardScreen({
     setBusy(true);
     const r = screen.result;
     const fullName =
-      r.state === "authorized" ||
+      // Si el guardia tipeó un nombre manual, ése prima (caso visitante
+      // desconocido o nombre que quieren corregir).
+      visitorName.trim() ||
+      (r.state === "authorized" ||
       r.state === "expired" ||
       r.state === "out_of_window" ||
       r.state === "access_expired"
         ? r.fullName ?? screen.scannedName
-        : screen.scannedName;
+        : screen.scannedName);
 
-    const effectivePlate = (
-      selectedPlate === "OTRA" ? customPlate : selectedPlate
-    )
+    const isOther = selectedPlate === "OTRA";
+    const effectivePlate = (isOther ? customPlate : selectedPlate)
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "");
+
+    // Si el guardia eligió un vehículo de la lista del residente, no
+    // mandamos make/model/color (ya están en la tabla vehicles). Solo
+    // pasamos los datos cuando es una patente nueva tipeada manualmente.
+    const eventMake = isOther ? customMake.trim() || null : null;
+    const eventModel = isOther ? customModel.trim() || null : null;
+    const eventColor = isOther ? customColor.trim() || null : null;
 
     const event: QueuedEvent = {
       client_id: uuid(),
@@ -315,6 +336,9 @@ export default function GuardScreen({
       gate_id: gateId,
       gate_label: currentGate?.name ?? null,
       vehicle_plate: effectivePlate || null,
+      vehicle_make: eventMake,
+      vehicle_model: eventModel,
+      vehicle_color: eventColor,
       companions: companions || 0,
       notes: notes.trim() || null,
     };
@@ -504,10 +528,18 @@ export default function GuardScreen({
             setSelectedPlate={setSelectedPlate}
             customPlate={customPlate}
             setCustomPlate={setCustomPlate}
+            customMake={customMake}
+            setCustomMake={setCustomMake}
+            customModel={customModel}
+            setCustomModel={setCustomModel}
+            customColor={customColor}
+            setCustomColor={setCustomColor}
             companions={companions}
             setCompanions={setCompanions}
             notes={notes}
             setNotes={setNotes}
+            visitorName={visitorName}
+            setVisitorName={setVisitorName}
           />
         )}
         {screen.kind === "confirmed" && <ConfirmedView message={screen.message} />}
@@ -630,10 +662,18 @@ function ResultView({
   setSelectedPlate,
   customPlate,
   setCustomPlate,
+  customMake,
+  setCustomMake,
+  customModel,
+  setCustomModel,
+  customColor,
+  setCustomColor,
   companions,
   setCompanions,
   notes,
   setNotes,
+  visitorName,
+  setVisitorName,
 }: {
   result: LookupResult;
   scannedName?: string;
@@ -645,10 +685,18 @@ function ResultView({
   setSelectedPlate: (s: string) => void;
   customPlate: string;
   setCustomPlate: (s: string) => void;
+  customMake: string;
+  setCustomMake: (s: string) => void;
+  customModel: string;
+  setCustomModel: (s: string) => void;
+  customColor: string;
+  setCustomColor: (s: string) => void;
   companions: number;
   setCompanions: (n: number) => void;
   notes: string;
   setNotes: (s: string) => void;
+  visitorName: string;
+  setVisitorName: (s: string) => void;
 }) {
   const dniDisplay = formatDni(result.dni);
   const actionLabel = direction === "in" ? "Registrar entrada" : "Registrar salida";
@@ -719,14 +767,37 @@ function ResultView({
             </button>
           </div>
           {selectedPlate === "OTRA" && (
-            <input
-              type="text"
-              value={customPlate}
-              onChange={(e) => setCustomPlate(e.target.value.toUpperCase())}
-              placeholder="AA123BB"
-              autoFocus
-              className="mt-2 w-full max-w-xs bg-zinc-950 border border-zinc-700 rounded px-3 py-2 font-mono font-bold tracking-wider uppercase"
-            />
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <input
+                type="text"
+                value={customPlate}
+                onChange={(e) => setCustomPlate(e.target.value.toUpperCase())}
+                placeholder="Patente"
+                autoFocus
+                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 font-mono font-bold tracking-wider uppercase"
+              />
+              <input
+                type="text"
+                value={customMake}
+                onChange={(e) => setCustomMake(e.target.value)}
+                placeholder="Marca"
+                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+              />
+              <input
+                type="text"
+                value={customModel}
+                onChange={(e) => setCustomModel(e.target.value)}
+                placeholder="Modelo"
+                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+              />
+              <input
+                type="text"
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                placeholder="Color"
+                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+              />
+            </div>
           )}
         </div>
         {result.pendingPackages && result.pendingPackages > 0 ? (
@@ -868,6 +939,55 @@ function ResultView({
       <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
       <p className="text-lg opacity-80 mb-6">{result.detail}</p>
       {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
+
+      {/* Para visitantes desconocidos o sin nombre: input editable + nota + acompañantes */}
+      <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 max-w-md mx-auto text-left space-y-3">
+        <div>
+          <label className="text-xs uppercase tracking-wider opacity-80">
+            Nombre del visitante {!displayName && <span className="text-rose-200">(requerido)</span>}
+          </label>
+          <input
+            type="text"
+            value={visitorName}
+            onChange={(e) => setVisitorName(e.target.value)}
+            placeholder={displayName ?? "Nombre y apellido"}
+            className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+          />
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs uppercase tracking-wider opacity-80">Acompañantes</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setCompanions(Math.max(0, companions - 1))}
+              disabled={companions === 0}
+              className="w-7 h-7 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold disabled:opacity-30"
+            >
+              −
+            </button>
+            <span className="font-bold w-7 text-center tabular-nums">{companions}</span>
+            <button
+              type="button"
+              onClick={() => setCompanions(companions + 1)}
+              className="w-7 h-7 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider opacity-80">Nota (opcional)</label>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={200}
+            placeholder='Ej: "vino a buscar paquete", "delivery", "vendedor"'
+            className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+          />
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
         <button
           onClick={() =>
