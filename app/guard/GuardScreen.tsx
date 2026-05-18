@@ -54,6 +54,8 @@ export default function GuardScreen({
   const [gateId, setGateId] = useState<string | null>(null);
   const [showGatePicker, setShowGatePicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [selectedPlate, setSelectedPlate] = useState<string>("");
+  const [customPlate, setCustomPlate] = useState<string>("");
 
   const currentGate = gates.find((g) => g.id === gateId) ?? null;
 
@@ -174,6 +176,18 @@ export default function GuardScreen({
     return () => clearInterval(t);
   }, [online, flushQueue]);
 
+  // --- al cambiar de resultado, resetear selección de patente ---
+  useEffect(() => {
+    if (screen.kind === "result" && screen.result.state === "authorized") {
+      const vs = screen.result.vehicles ?? [];
+      setSelectedPlate(vs.length === 1 ? vs[0].plate : "");
+      setCustomPlate("");
+    } else if (screen.kind !== "result") {
+      setSelectedPlate("");
+      setCustomPlate("");
+    }
+  }, [screen]);
+
   // --- auto vuelta a idle ---
   useEffect(() => {
     if (screen.kind === "confirmed") {
@@ -268,6 +282,13 @@ export default function GuardScreen({
         ? r.fullName ?? screen.scannedName
         : screen.scannedName;
 
+    const effectivePlate = (
+      selectedPlate === "OTRA" ? customPlate : selectedPlate
+    )
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+
     const event: QueuedEvent = {
       client_id: uuid(),
       dni: r.dni,
@@ -287,6 +308,7 @@ export default function GuardScreen({
       occurred_at: new Date().toISOString(),
       gate_id: gateId,
       gate_label: currentGate?.name ?? null,
+      vehicle_plate: effectivePlate || null,
     };
 
     // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
@@ -470,6 +492,10 @@ export default function GuardScreen({
             direction={direction}
             onRegister={register}
             busy={busy}
+            selectedPlate={selectedPlate}
+            setSelectedPlate={setSelectedPlate}
+            customPlate={customPlate}
+            setCustomPlate={setCustomPlate}
           />
         )}
         {screen.kind === "confirmed" && <ConfirmedView message={screen.message} />}
@@ -588,6 +614,10 @@ function ResultView({
   direction,
   onRegister,
   busy,
+  selectedPlate,
+  setSelectedPlate,
+  customPlate,
+  setCustomPlate,
 }: {
   result: LookupResult;
   scannedName?: string;
@@ -595,6 +625,10 @@ function ResultView({
   direction: "in" | "out";
   onRegister: (opts: { result: "authorized" | "forced" | "manual"; reason?: string }) => void;
   busy: boolean;
+  selectedPlate: string;
+  setSelectedPlate: (s: string) => void;
+  customPlate: string;
+  setCustomPlate: (s: string) => void;
 }) {
   const dniDisplay = formatDni(result.dni);
   const actionLabel = direction === "in" ? "Registrar entrada" : "Registrar salida";
@@ -614,21 +648,67 @@ function ResultView({
         <p className="text-3xl font-semibold mb-1">{result.fullName}</p>
         <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
         <p className="text-lg opacity-80 mb-3">{result.detail}</p>
-        {vehicles.length > 0 && (
-          <div className="bg-black/30 rounded-xl px-4 py-3 mb-4 inline-block text-left">
-            <div className="text-xs uppercase tracking-wider opacity-70 mb-1">Vehículos</div>
+
+        {/* Selector de vehículo para el ingreso */}
+        <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+          <div className="text-xs uppercase tracking-wider opacity-80 mb-2">
+            {direction === "in" ? "¿Con qué vehículo entra?" : "¿Con qué vehículo sale?"}
+          </div>
+          <div className="flex flex-wrap gap-2">
             {vehicles.map((v) => (
-              <div key={v.plate} className="font-mono font-bold text-lg">
+              <button
+                key={v.plate}
+                type="button"
+                onClick={() => setSelectedPlate(v.plate)}
+                className={`px-3 py-2 rounded-lg font-mono font-bold transition ${
+                  selectedPlate === v.plate
+                    ? "bg-zinc-950 text-emerald-400 ring-2 ring-zinc-950"
+                    : "bg-zinc-950/50 hover:bg-zinc-950/80"
+                }`}
+              >
                 {v.plate}
-                {(v.make || v.model || v.color) && (
-                  <span className="font-sans font-normal text-sm opacity-80 ml-2">
-                    {[v.make, v.model, v.color].filter(Boolean).join(" · ")}
+                {(v.make || v.model) && (
+                  <span className="block font-sans font-normal text-xs opacity-80 mt-0.5">
+                    {[v.make, v.model].filter(Boolean).join(" ")}
+                    {v.color && ` · ${v.color}`}
                   </span>
                 )}
-              </div>
+              </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setSelectedPlate("")}
+              className={`px-3 py-2 rounded-lg font-bold transition ${
+                selectedPlate === ""
+                  ? "bg-zinc-950 text-zinc-300 ring-2 ring-zinc-950"
+                  : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
+              }`}
+            >
+              🚶 Sin auto
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedPlate("OTRA")}
+              className={`px-3 py-2 rounded-lg font-bold transition ${
+                selectedPlate === "OTRA"
+                  ? "bg-zinc-950 text-amber-300 ring-2 ring-zinc-950"
+                  : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
+              }`}
+            >
+              ✏️ Otra patente
+            </button>
           </div>
-        )}
+          {selectedPlate === "OTRA" && (
+            <input
+              type="text"
+              value={customPlate}
+              onChange={(e) => setCustomPlate(e.target.value.toUpperCase())}
+              placeholder="AA123BB"
+              autoFocus
+              className="mt-2 w-full max-w-xs bg-zinc-950 border border-zinc-700 rounded px-3 py-2 font-mono font-bold tracking-wider uppercase"
+            />
+          )}
+        </div>
         {result.pendingPackages && result.pendingPackages > 0 ? (
           <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>

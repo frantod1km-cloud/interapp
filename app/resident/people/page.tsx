@@ -11,6 +11,7 @@ import {
 } from "./actions";
 import RuleEditor from "./RuleEditor";
 import ExpiryEditor from "./ExpiryEditor";
+import PersonVehicles from "./PersonVehicles";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,30 @@ export default async function ResidentPeoplePage({
     .eq("organization_id", org.id)
     .eq("authorized_by_resident_id", me.id)
     .order("last_name");
+
+  // Cargar vehículos de cada persona (todos en una query para evitar N+1)
+  type VehicleRow = {
+    id: string;
+    plate: string;
+    make: string | null;
+    model: string | null;
+    color: string | null;
+    resident_id: string;
+  };
+  const personIds = (people ?? []).map((p) => p.id);
+  let allVehicles: VehicleRow[] = [];
+  if (personIds.length > 0) {
+    const { data } = await supabase
+      .from("vehicles")
+      .select("id, plate, make, model, color, resident_id")
+      .in("resident_id", personIds);
+    allVehicles = (data ?? []) as VehicleRow[];
+  }
+  const vehiclesByPerson = new Map<string, VehicleRow[]>();
+  for (const v of allVehicles) {
+    if (!vehiclesByPerson.has(v.resident_id)) vehiclesByPerson.set(v.resident_id, []);
+    vehiclesByPerson.get(v.resident_id)!.push(v);
+  }
 
   return (
     <div>
@@ -227,6 +252,10 @@ export default async function ResidentPeoplePage({
                   endHour={p.end_hour}
                 />
                 <ExpiryEditor personId={p.id} currentExpiresAt={p.access_expires_at} />
+                <PersonVehicles
+                  personId={p.id}
+                  vehicles={vehiclesByPerson.get(p.id) ?? []}
+                />
               </div>
             </div>
           );

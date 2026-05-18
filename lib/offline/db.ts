@@ -70,6 +70,7 @@ export type QueuedEvent = {
   occurred_at: string;        // ISO local
   gate_id: string | null;
   gate_label: string | null;
+  vehicle_plate: string | null;
 };
 
 function openDb(): Promise<IDBDatabase> {

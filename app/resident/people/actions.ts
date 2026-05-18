@@ -123,6 +123,49 @@ export async function togglePersonActiveAction(formData: FormData): Promise<void
   revalidatePath("/resident/people");
 }
 
+function normalizePlate(s: string): string {
+  return s.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+}
+
+// Agregar vehículo a una persona autorizada por el residente actual.
+// La RLS de la migration 0016 permite operar sobre personas que él autoriza.
+export async function addPersonVehicleAction(formData: FormData): Promise<void> {
+  const { orgId } = await currentResident();
+  const personId = String(formData.get("person_id") ?? "");
+  const plate = normalizePlate(String(formData.get("plate") ?? ""));
+  const make = String(formData.get("make") ?? "").trim() || null;
+  const model = String(formData.get("model") ?? "").trim() || null;
+  const color = String(formData.get("color") ?? "").trim() || null;
+
+  if (!personId) return;
+  if (!plate || plate.length < 4) fail("Patente inválida");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("vehicles").insert({
+    organization_id: orgId,
+    resident_id: personId,
+    plate,
+    make,
+    model,
+    color,
+  });
+  if (error) fail(error.message);
+
+  revalidatePath("/resident/people");
+}
+
+export async function removePersonVehicleAction(formData: FormData): Promise<void> {
+  await currentResident();
+  const vehicleId = String(formData.get("vehicle_id") ?? "");
+  if (!vehicleId) return;
+
+  const supabase = await createClient();
+  // RLS asegura que solo borre vehículos de su gente (o suyos)
+  await supabase.from("vehicles").delete().eq("id", vehicleId);
+
+  revalidatePath("/resident/people");
+}
+
 export async function updatePersonRuleAction(formData: FormData): Promise<void> {
   const { residentId } = await currentResident();
   const id = String(formData.get("person_id") ?? "");
