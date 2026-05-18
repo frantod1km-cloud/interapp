@@ -30,6 +30,7 @@ export default async function ResidentLayout({ children }: { children: React.Rea
           <Link href="/resident/packages" className="hover:text-zinc-900">📦</Link>
           <Link href="/resident/marketplace" className="hover:text-zinc-900">🛒 Reservas</Link>
           <Link href="/resident/history" className="hover:text-zinc-900">Historial</Link>
+          <Link href="/resident/profile" className="hover:text-zinc-900">👤 Mi perfil</Link>
           <form action="/api/logout" method="post">
             <button className="text-zinc-700 hover:text-zinc-900">Salir</button>
           </form>
