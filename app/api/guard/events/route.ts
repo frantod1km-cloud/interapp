@@ -29,6 +29,12 @@ type IncomingEvent = {
   vehicle_model?: string | null;
   vehicle_color?: string | null;
   companions?: number;
+  companions_data?: Array<{
+    dni: string;
+    full_name: string;
+    resident_id?: string | null;
+    authorization_id?: string | null;
+  }>;
   notes?: string | null;
 };
 
@@ -70,6 +76,7 @@ export async function POST(req: Request) {
     vehicle_model: e.vehicle_model?.trim() || null,
     vehicle_color: e.vehicle_color?.trim() || null,
     companions: typeof e.companions === "number" && e.companions >= 0 ? e.companions : 0,
+    companions_data: Array.isArray(e.companions_data) ? e.companions_data : [],
     notes: e.notes?.trim() || null,
     occurred_at: e.occurred_at,
     synced_at: new Date().toISOString(),

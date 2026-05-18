@@ -14,6 +14,7 @@ import {
   type Snapshot,
 } from "@/lib/offline/db";
 import { lookupDniOffline } from "@/lib/offline/lookup";
+import CompanionPicker, { type Companion } from "./CompanionPicker";
 
 type Screen =
   | { kind: "idle" }
@@ -59,7 +60,8 @@ export default function GuardScreen({
   const [customMake, setCustomMake] = useState<string>("");
   const [customModel, setCustomModel] = useState<string>("");
   const [customColor, setCustomColor] = useState<string>("");
-  const [companions, setCompanions] = useState<number>(0);
+  const [companionList, setCompanionList] = useState<Companion[]>([]);
+  const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [notes, setNotes] = useState<string>("");
   const [visitorName, setVisitorName] = useState<string>("");
 
@@ -93,8 +95,8 @@ export default function GuardScreen({
   // puede recibir el foco normalmente.
   const modalOpenRef = useRef(false);
   useEffect(() => {
-    modalOpenRef.current = showGatePicker || showSearch;
-  }, [showGatePicker, showSearch]);
+    modalOpenRef.current = showGatePicker || showSearch || showCompanionPicker;
+  }, [showGatePicker, showSearch, showCompanionPicker]);
 
   const refocus = useCallback(() => {
     if (modalOpenRef.current) return;
@@ -191,7 +193,7 @@ export default function GuardScreen({
       setCustomMake("");
       setCustomModel("");
       setCustomColor("");
-      setCompanions(0);
+      setCompanionList([]);
       setNotes("");
       setVisitorName("");
     } else if (screen.kind !== "result") {
@@ -200,11 +202,18 @@ export default function GuardScreen({
       setCustomMake("");
       setCustomModel("");
       setCustomColor("");
-      setCompanions(0);
+      setCompanionList([]);
       setNotes("");
       setVisitorName("");
     }
   }, [screen]);
+
+  // Si el guardia cambia a "Sin auto", limpiar acompañantes
+  useEffect(() => {
+    if (selectedPlate === "" && companionList.length > 0) {
+      setCompanionList([]);
+    }
+  }, [selectedPlate, companionList.length]);
 
   // --- auto vuelta a idle ---
   useEffect(() => {
@@ -339,7 +348,8 @@ export default function GuardScreen({
       vehicle_make: eventMake,
       vehicle_model: eventModel,
       vehicle_color: eventColor,
-      companions: companions || 0,
+      companions: companionList.length,
+      companions_data: companionList,
       notes: notes.trim() || null,
     };
 
@@ -427,6 +437,19 @@ export default function GuardScreen({
           onPick={(dni) => {
             setShowSearch(false);
             submit(dni);
+          }}
+        />
+      )}
+
+      {showCompanionPicker && (
+        <CompanionPicker
+          onClose={() => setShowCompanionPicker(false)}
+          onAdd={(c) => {
+            // Evitar duplicados por DNI
+            if (!companionList.some((x) => x.dni === c.dni)) {
+              setCompanionList([...companionList, c]);
+            }
+            setShowCompanionPicker(false);
           }}
         />
       )}
@@ -534,8 +557,9 @@ export default function GuardScreen({
             setCustomModel={setCustomModel}
             customColor={customColor}
             setCustomColor={setCustomColor}
-            companions={companions}
-            setCompanions={setCompanions}
+            companionList={companionList}
+            setCompanionList={setCompanionList}
+            openCompanionPicker={() => setShowCompanionPicker(true)}
             notes={notes}
             setNotes={setNotes}
             visitorName={visitorName}
@@ -668,8 +692,9 @@ function ResultView({
   setCustomModel,
   customColor,
   setCustomColor,
-  companions,
-  setCompanions,
+  companionList,
+  setCompanionList,
+  openCompanionPicker,
   notes,
   setNotes,
   visitorName,
@@ -691,8 +716,9 @@ function ResultView({
   setCustomModel: (s: string) => void;
   customColor: string;
   setCustomColor: (s: string) => void;
-  companions: number;
-  setCompanions: (n: number) => void;
+  companionList: Companion[];
+  setCompanionList: (cs: Companion[]) => void;
+  openCompanionPicker: () => void;
   notes: string;
   setNotes: (s: string) => void;
   visitorName: string;
@@ -848,48 +874,66 @@ function ResultView({
         )}
         {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
 
-        {/* Acompañantes + Nota: detalles opcionales del ingreso */}
-        <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs uppercase tracking-wider opacity-80">Acompañantes</span>
-            <div className="flex items-center gap-1">
+        {/* Acompañantes + Nota — solo si hay vehículo seleccionado (con
+            patente real o "OTRA"). Si entra a pie ("Sin auto"), cada
+            persona se escanea por separado. */}
+        {selectedPlate !== "" && (
+          <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <span className="text-xs uppercase tracking-wider opacity-80">
+                Acompañantes en el auto
+              </span>
               <button
                 type="button"
-                onClick={() => setCompanions(Math.max(0, companions - 1))}
-                disabled={companions === 0}
-                className="w-8 h-8 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold text-lg disabled:opacity-30"
+                onClick={openCompanionPicker}
+                className="bg-zinc-950 text-emerald-400 text-sm font-semibold px-3 py-1.5 rounded hover:bg-zinc-950/80"
               >
-                −
-              </button>
-              <span className="font-bold text-lg w-8 text-center tabular-nums">{companions}</span>
-              <button
-                type="button"
-                onClick={() => setCompanions(companions + 1)}
-                className="w-8 h-8 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold text-lg"
-              >
-                +
+                + Agregar acompañante
               </button>
             </div>
-            <span className="text-xs opacity-70">
-              {companions === 0
-                ? "(solo el titular)"
-                : `(${companions + 1} personas en total)`}
-            </span>
-          </div>
 
-          <div className="mt-3">
-            <label className="text-xs uppercase tracking-wider opacity-80">
-              Nota (opcional)
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              maxLength={200}
-              placeholder='Ej: "trae mudanza", "se queda a dormir", "viene en moto"'
-              className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
-            />
+            {companionList.length === 0 ? (
+              <p className="text-xs opacity-70">Solo el titular.</p>
+            ) : (
+              <div className="space-y-1">
+                {companionList.map((c) => (
+                  <div
+                    key={c.dni}
+                    className="bg-zinc-950/50 rounded px-3 py-2 flex items-center justify-between"
+                  >
+                    <div className="text-sm">
+                      <span className="font-semibold">{c.full_name}</span>
+                      <span className="opacity-70 ml-2 tabular-nums">DNI {formatDni(c.dni)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCompanionList(companionList.filter((x) => x.dni !== c.dni))
+                      }
+                      className="text-rose-300 hover:text-white text-sm px-2"
+                      aria-label="Quitar"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
+
+        <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+          <label className="text-xs uppercase tracking-wider opacity-80">
+            Nota (opcional)
+          </label>
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={200}
+            placeholder='Ej: "trae mudanza", "se queda a dormir", "viene en moto"'
+            className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+          />
         </div>
 
         <div>
@@ -954,26 +998,41 @@ function ResultView({
             className="w-full mt-1 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
           />
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs uppercase tracking-wider opacity-80">Acompañantes</span>
-          <div className="flex items-center gap-1">
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs uppercase tracking-wider opacity-80">Acompañantes</span>
             <button
               type="button"
-              onClick={() => setCompanions(Math.max(0, companions - 1))}
-              disabled={companions === 0}
-              className="w-7 h-7 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold disabled:opacity-30"
+              onClick={openCompanionPicker}
+              className="bg-zinc-950 text-amber-200 text-xs font-semibold px-3 py-1 rounded hover:bg-zinc-950/80"
             >
-              −
-            </button>
-            <span className="font-bold w-7 text-center tabular-nums">{companions}</span>
-            <button
-              type="button"
-              onClick={() => setCompanions(companions + 1)}
-              className="w-7 h-7 rounded bg-zinc-950/50 hover:bg-zinc-950/80 font-bold"
-            >
-              +
+              + Agregar
             </button>
           </div>
+          {companionList.length === 0 ? (
+            <p className="text-xs opacity-70">Solo el visitante.</p>
+          ) : (
+            <div className="space-y-1">
+              {companionList.map((c) => (
+                <div
+                  key={c.dni}
+                  className="bg-zinc-950/50 rounded px-2 py-1 flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <span className="font-semibold">{c.full_name}</span>
+                    <span className="opacity-70 ml-2 tabular-nums">DNI {formatDni(c.dni)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCompanionList(companionList.filter((x) => x.dni !== c.dni))}
+                    className="text-rose-300 hover:text-white px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label className="text-xs uppercase tracking-wider opacity-80">Nota (opcional)</label>

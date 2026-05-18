@@ -38,7 +38,7 @@ export default async function EventsPage({
 
   let query = supabase
     .from("access_events")
-    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, notes, gate_label")
+    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, companions_data, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", range.from.toISOString())
     .lte("occurred_at", range.to.toISOString())
@@ -144,11 +144,29 @@ export default async function EventsPage({
                   </td>
                   <td className="px-4 py-3 text-center tabular-nums">
                     {e.companions > 0 ? (
-                      <span className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded text-xs font-bold">
+                      <span
+                        className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded text-xs font-bold cursor-help"
+                        title={
+                          Array.isArray(e.companions_data) && e.companions_data.length > 0
+                            ? (e.companions_data as Array<{ dni: string; full_name: string }>)
+                                .map((c) => `${c.full_name} (${formatDni(c.dni)})`)
+                                .join("\n")
+                            : "Sin detalle de nombres"
+                        }
+                      >
                         +{e.companions}
                       </span>
                     ) : (
                       <span className="text-zinc-600">—</span>
+                    )}
+                    {Array.isArray(e.companions_data) && e.companions_data.length > 0 && (
+                      <div className="text-[10px] text-zinc-500 mt-1 text-left">
+                        {(e.companions_data as Array<{ dni: string; full_name: string }>).map((c) => (
+                          <div key={c.dni} className="truncate">
+                            {c.full_name}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-zinc-400 text-xs max-w-xs">

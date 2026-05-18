@@ -75,6 +75,12 @@ export type QueuedEvent = {
   vehicle_model: string | null;
   vehicle_color: string | null;
   companions: number;         // 0 = solo el titular; N = N personas más
+  companions_data: Array<{    // detalle de cada acompañante (puede estar vacío)
+    dni: string;
+    full_name: string;
+    resident_id?: string | null;
+    authorization_id?: string | null;
+  }>;
   notes: string | null;       // texto libre opcional
 };
 

@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: events } = await supabase
     .from("access_events")
-    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, notes, gate_label")
+    .select("occurred_at, dni, full_name, direction, result, reason, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, companions_data, notes, gate_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", from.toISOString())
     .lte("occurred_at", to.toISOString())
@@ -55,25 +55,33 @@ export async function GET(req: Request) {
     "modelo",
     "color",
     "acompañantes",
+    "acompañantes_detalle",
     "nota",
     "motivo",
     "garita",
   ];
-  const rows = (events ?? []).map((e) => [
-    new Date(e.occurred_at).toLocaleString("es-AR"),
-    e.dni,
-    e.full_name,
-    e.direction === "in" ? "entrada" : "salida",
-    e.result,
-    e.vehicle_plate,
-    e.vehicle_make,
-    e.vehicle_model,
-    e.vehicle_color,
-    String(e.companions ?? 0),
-    e.notes,
-    e.reason,
-    e.gate_label,
-  ]);
+  const rows = (events ?? []).map((e) => {
+    const cdata = Array.isArray(e.companions_data)
+      ? (e.companions_data as Array<{ dni: string; full_name: string }>)
+      : [];
+    const detail = cdata.map((c) => `${c.full_name} (${c.dni})`).join("; ");
+    return [
+      new Date(e.occurred_at).toLocaleString("es-AR"),
+      e.dni,
+      e.full_name,
+      e.direction === "in" ? "entrada" : "salida",
+      e.result,
+      e.vehicle_plate,
+      e.vehicle_make,
+      e.vehicle_model,
+      e.vehicle_color,
+      String(e.companions ?? 0),
+      detail,
+      e.notes,
+      e.reason,
+      e.gate_label,
+    ];
+  });
 
   const csv = [header, ...rows]
     .map((row) => row.map((c) => csvEscape(c as string | null)).join(","))
