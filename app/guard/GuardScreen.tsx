@@ -572,7 +572,7 @@ export default function GuardScreen({
       </header>
 
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] px-6 text-center">
-        {screen.kind === "idle" && <IdleView />}
+        {screen.kind === "idle" && <IdleView typing={value} />}
         {screen.kind === "checking" && <CheckingView raw={screen.raw} />}
         {screen.kind === "result" && (
           <ResultView
@@ -623,7 +623,7 @@ type DashboardStats = {
   activeAuths: number;
 };
 
-function IdleView() {
+function IdleView({ typing }: { typing: string }) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
@@ -640,12 +640,33 @@ function IdleView() {
     return () => clearInterval(t);
   }, []);
 
+  // Si el guardia está tipeando, mostramos los caracteres en grande.
+  // Si es un scan PDF417 (incluye "@"), mostramos un mensaje genérico
+  // porque el contenido del PDF417 es largo y feo.
+  const showTyping = typing.length > 0;
+  const isScanning = typing.includes("@");
+  const displayTyping = isScanning ? "Escaneando…" : formatTyping(typing);
+
   return (
     <div className="w-full max-w-3xl">
       <div className="text-center mb-10">
-        <div className="text-7xl mb-6">📷</div>
-        <h1 className="text-4xl font-bold mb-3">Escaneá el DNI</h1>
-        <p className="text-xl text-zinc-400">o tipeá el número y presioná Enter</p>
+        {showTyping ? (
+          <>
+            <div className="text-7xl mb-6">⌨️</div>
+            <h1 className="text-5xl font-bold mb-3 tabular-nums font-mono tracking-widest">
+              {displayTyping}
+            </h1>
+            <p className="text-xl text-zinc-400">
+              Presioná <kbd className="bg-zinc-800 px-2 py-1 rounded text-sm">Enter</kbd> para verificar
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="text-7xl mb-6">📷</div>
+            <h1 className="text-4xl font-bold mb-3">Escaneá el DNI</h1>
+            <p className="text-xl text-zinc-400">o tipeá el número y presioná Enter</p>
+          </>
+        )}
       </div>
 
       {stats && (
@@ -1273,6 +1294,14 @@ function SearchPanel({
 
 // Formatea una fecha ISO como tiempo legible: "hoy 14:30", "ayer 22:00",
 // "lun 12/05 10:00", etc.
+// Formatea lo que va tipeando el guardia. Si parece un DNI (solo digitos),
+// le pone puntos cada 3 a la derecha: "12345678" -> "12.345.678".
+function formatTyping(s: string): string {
+  const onlyDigits = /^\d+$/.test(s);
+  if (!onlyDigits) return s;
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 function formatLastSeen(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
