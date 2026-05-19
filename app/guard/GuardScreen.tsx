@@ -546,6 +546,18 @@ export default function GuardScreen({
               Padrón: {new Date(snapshotAge).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
+          {(screen.kind === "result" || screen.kind === "error") && (
+            <button
+              type="button"
+              onClick={() => {
+                setScreen({ kind: "idle" });
+                refocus();
+              }}
+              className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 font-semibold"
+            >
+              ✕ Cancelar
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowSearch(true)}
