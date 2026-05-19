@@ -555,7 +555,7 @@ export default function GuardScreen({
               }}
               className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 font-semibold"
             >
-              ✕ Cancelar
+              Cancelar
             </button>
           )}
           <button
