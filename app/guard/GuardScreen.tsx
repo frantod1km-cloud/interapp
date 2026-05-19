@@ -593,6 +593,10 @@ export default function GuardScreen({
             offline={screen.offline}
             direction={direction}
             onRegister={register}
+            onCancel={() => {
+              setScreen({ kind: "idle" });
+              refocus();
+            }}
             busy={busy}
             selectedPlate={selectedPlate}
             setSelectedPlate={setSelectedPlate}
@@ -749,6 +753,7 @@ function ResultView({
   offline,
   direction,
   onRegister,
+  onCancel,
   busy,
   selectedPlate,
   setSelectedPlate,
@@ -773,6 +778,7 @@ function ResultView({
   offline: boolean;
   direction: "in" | "out";
   onRegister: (opts: { result: "authorized" | "forced" | "manual"; reason?: string }) => void;
+  onCancel: () => void;
   busy: boolean;
   selectedPlate: string;
   setSelectedPlate: (s: string) => void;
@@ -1004,13 +1010,20 @@ function ResultView({
           />
         </div>
 
-        <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center items-center">
           <button
             onClick={() => onRegister({ result: "authorized" })}
             disabled={busy}
             className="bg-zinc-950 text-emerald-400 font-bold text-2xl px-10 py-5 rounded-2xl shadow-lg active:scale-95 transition disabled:opacity-50"
           >
             {busy ? "Registrando…" : actionLabel}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="bg-white/20 hover:bg-white/30 text-white font-semibold text-lg px-6 py-4 rounded-2xl transition disabled:opacity-50"
+          >
+            Cancelar
           </button>
         </div>
       </div>
@@ -1115,7 +1128,7 @@ function ResultView({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center items-center flex-wrap">
         <button
           onClick={() =>
             onRegister({
@@ -1134,11 +1147,18 @@ function ResultView({
           Forzar {direction === "in" ? "entrada" : "salida"}
         </button>
         <button
-          onClick={() => onRegister({ result: "manual", reason: "Rechazado" })}
+          onClick={() => onRegister({ result: "manual", reason: "Paso denegado" })}
           disabled={busy}
           className="bg-rose-700 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow active:scale-95 transition disabled:opacity-50"
         >
-          Rechazar
+          Denegar paso
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={busy}
+          className="bg-white/20 hover:bg-white/30 text-white font-semibold text-lg px-6 py-3 rounded-2xl transition disabled:opacity-50"
+        >
+          Cancelar
         </button>
       </div>
     </div>
