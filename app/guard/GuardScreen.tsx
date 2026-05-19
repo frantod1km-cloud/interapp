@@ -222,11 +222,22 @@ export default function GuardScreen({
     }
   }, [screen]);
 
-  // Si el guardia cambia a "Sin auto", limpiar acompañantes
+  // Si el guardia cambia a "Sin auto" en el caso autorizado, limpiar
+  // acompañantes. Solo aplicamos esto cuando hay panel de vehículo activo
+  // (estado authorized o cualquier warning). NO limpiamos si el panel no
+  // está renderizado todavía (al abrirse la ficha selectedPlate arranca
+  // vacío y eso no significa "Sin auto" explícito).
+  const previousPlateRef = useRef<string | null>(null);
   useEffect(() => {
-    if (selectedPlate === "" && companionList.length > 0) {
+    if (
+      previousPlateRef.current !== null &&
+      previousPlateRef.current !== "" &&
+      selectedPlate === "" &&
+      companionList.length > 0
+    ) {
       setCompanionList([]);
     }
+    previousPlateRef.current = selectedPlate;
   }, [selectedPlate, companionList.length]);
 
   // --- auto vuelta a idle ---
@@ -817,89 +828,20 @@ function ResultView({
         <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
         <p className="text-lg opacity-80 mb-3">{result.detail}</p>
 
-        {/* Selector de vehículo para el ingreso */}
-        <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
-          <div className="text-xs uppercase tracking-wider opacity-80 mb-2">
-            {direction === "in" ? "¿Con qué vehículo entra?" : "¿Con qué vehículo sale?"}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {vehicles.map((v) => (
-              <button
-                key={v.plate}
-                type="button"
-                onClick={() => setSelectedPlate(v.plate)}
-                className={`px-3 py-2 rounded-lg font-mono font-bold transition ${
-                  selectedPlate === v.plate
-                    ? "bg-zinc-950 text-emerald-400 ring-2 ring-zinc-950"
-                    : "bg-zinc-950/50 hover:bg-zinc-950/80"
-                }`}
-              >
-                {v.plate}
-                {(v.make || v.model) && (
-                  <span className="block font-sans font-normal text-xs opacity-80 mt-0.5">
-                    {[v.make, v.model].filter(Boolean).join(" ")}
-                    {v.color && ` · ${v.color}`}
-                  </span>
-                )}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setSelectedPlate("")}
-              className={`px-3 py-2 rounded-lg font-bold transition ${
-                selectedPlate === ""
-                  ? "bg-zinc-950 text-zinc-300 ring-2 ring-zinc-950"
-                  : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
-              }`}
-            >
-              🚶 Sin auto
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedPlate("OTRA")}
-              className={`px-3 py-2 rounded-lg font-bold transition ${
-                selectedPlate === "OTRA"
-                  ? "bg-zinc-950 text-amber-300 ring-2 ring-zinc-950"
-                  : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
-              }`}
-            >
-              ✏️ Otra patente
-            </button>
-          </div>
-          {selectedPlate === "OTRA" && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
-              <input
-                type="text"
-                value={customPlate}
-                onChange={(e) => setCustomPlate(e.target.value.toUpperCase())}
-                placeholder="Patente"
-                autoFocus
-                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 font-mono font-bold tracking-wider uppercase"
-              />
-              <input
-                type="text"
-                value={customMake}
-                onChange={(e) => setCustomMake(e.target.value)}
-                placeholder="Marca"
-                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
-              />
-              <input
-                type="text"
-                value={customModel}
-                onChange={(e) => setCustomModel(e.target.value)}
-                placeholder="Modelo"
-                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
-              />
-              <input
-                type="text"
-                value={customColor}
-                onChange={(e) => setCustomColor(e.target.value)}
-                placeholder="Color"
-                className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
-              />
-            </div>
-          )}
-        </div>
+        <VehiclePicker
+          vehicles={vehicles}
+          direction={direction}
+          selectedPlate={selectedPlate}
+          setSelectedPlate={setSelectedPlate}
+          customPlate={customPlate}
+          setCustomPlate={setCustomPlate}
+          customMake={customMake}
+          setCustomMake={setCustomMake}
+          customModel={customModel}
+          setCustomModel={setCustomModel}
+          customColor={customColor}
+          setCustomColor={setCustomColor}
+        />
         {result.pendingPackages && result.pendingPackages > 0 ? (
           <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>
@@ -1064,6 +1006,29 @@ function ResultView({
       <p className="text-xl opacity-90 mb-1">DNI {dniDisplay}</p>
       <p className="text-lg opacity-80 mb-6">{result.detail}</p>
       {offline && <p className="text-xs opacity-70 mb-4">(offline · padrón local)</p>}
+
+      {/* Selector de vehículo: si el result tiene vehicles (out_of_window
+          de un residente) los muestra, sino solo "Sin auto" y "Otra patente" */}
+      <div className="max-w-md mx-auto">
+        <VehiclePicker
+          vehicles={
+            result.state === "out_of_window" && result.vehicles
+              ? result.vehicles
+              : []
+          }
+          direction={direction}
+          selectedPlate={selectedPlate}
+          setSelectedPlate={setSelectedPlate}
+          customPlate={customPlate}
+          setCustomPlate={setCustomPlate}
+          customMake={customMake}
+          setCustomMake={setCustomMake}
+          customModel={customModel}
+          setCustomModel={setCustomModel}
+          customColor={customColor}
+          setCustomColor={setCustomColor}
+        />
+      </div>
 
       {/* Para visitantes desconocidos o sin nombre: input editable + nota + acompañantes */}
       <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 max-w-md mx-auto text-left space-y-3">
@@ -1326,6 +1291,120 @@ function SearchPanel({
 
 // Formatea una fecha ISO como tiempo legible: "hoy 14:30", "ayer 22:00",
 // "lun 12/05 10:00", etc.
+// Selector de vehículo reutilizable. Se usa en autorizado y en warnings.
+function VehiclePicker({
+  vehicles,
+  direction,
+  selectedPlate,
+  setSelectedPlate,
+  customPlate,
+  setCustomPlate,
+  customMake,
+  setCustomMake,
+  customModel,
+  setCustomModel,
+  customColor,
+  setCustomColor,
+}: {
+  vehicles: Array<{ plate: string; make?: string | null; model?: string | null; color?: string | null }>;
+  direction: "in" | "out";
+  selectedPlate: string;
+  setSelectedPlate: (s: string) => void;
+  customPlate: string;
+  setCustomPlate: (s: string) => void;
+  customMake: string;
+  setCustomMake: (s: string) => void;
+  customModel: string;
+  setCustomModel: (s: string) => void;
+  customColor: string;
+  setCustomColor: (s: string) => void;
+}) {
+  return (
+    <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+      <div className="text-xs uppercase tracking-wider opacity-80 mb-2">
+        {direction === "in" ? "¿Con qué vehículo entra?" : "¿Con qué vehículo sale?"}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {vehicles.map((v) => (
+          <button
+            key={v.plate}
+            type="button"
+            onClick={() => setSelectedPlate(v.plate)}
+            className={`px-3 py-2 rounded-lg font-mono font-bold transition ${
+              selectedPlate === v.plate
+                ? "bg-zinc-950 text-emerald-400 ring-2 ring-zinc-950"
+                : "bg-zinc-950/50 hover:bg-zinc-950/80"
+            }`}
+          >
+            {v.plate}
+            {(v.make || v.model) && (
+              <span className="block font-sans font-normal text-xs opacity-80 mt-0.5">
+                {[v.make, v.model].filter(Boolean).join(" ")}
+                {v.color && ` · ${v.color}`}
+              </span>
+            )}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setSelectedPlate("")}
+          className={`px-3 py-2 rounded-lg font-bold transition ${
+            selectedPlate === ""
+              ? "bg-zinc-950 text-zinc-300 ring-2 ring-zinc-950"
+              : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
+          }`}
+        >
+          🚶 Sin auto
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectedPlate("OTRA")}
+          className={`px-3 py-2 rounded-lg font-bold transition ${
+            selectedPlate === "OTRA"
+              ? "bg-zinc-950 text-amber-300 ring-2 ring-zinc-950"
+              : "bg-zinc-950/50 hover:bg-zinc-950/80 opacity-80"
+          }`}
+        >
+          ✏️ Otra patente
+        </button>
+      </div>
+      {selectedPlate === "OTRA" && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <input
+            type="text"
+            value={customPlate}
+            onChange={(e) => setCustomPlate(e.target.value.toUpperCase())}
+            placeholder="Patente"
+            autoFocus
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 font-mono font-bold tracking-wider uppercase"
+          />
+          <input
+            type="text"
+            value={customMake}
+            onChange={(e) => setCustomMake(e.target.value)}
+            placeholder="Marca"
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+          />
+          <input
+            type="text"
+            value={customModel}
+            onChange={(e) => setCustomModel(e.target.value)}
+            placeholder="Modelo"
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+          />
+          <input
+            type="text"
+            value={customColor}
+            onChange={(e) => setCustomColor(e.target.value)}
+            placeholder="Color"
+            className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Formatea lo que va tipeando el guardia. Si parece un DNI (solo digitos),
 // le pone puntos cada 3 a la derecha: "12345678" -> "12.345.678".
 function formatTyping(s: string): string {
