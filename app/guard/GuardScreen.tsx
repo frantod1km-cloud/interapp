@@ -98,15 +98,29 @@ export default function GuardScreen({
     modalOpenRef.current = showGatePicker || showSearch || showCompanionPicker;
   }, [showGatePicker, showSearch, showCompanionPicker]);
 
+  // refocus pone foco en el input invisible del scanner. preventScroll
+  // evita que el navegador haga jump al top de la página.
   const refocus = useCallback(() => {
     if (modalOpenRef.current) return;
-    requestAnimationFrame(() => inputRef.current?.focus());
+    requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
   }, []);
+
+  // Detecta si un elemento es un control interactivo (input, textarea,
+  // select, button, link, o cualquier descendiente de un form). Si se
+  // clickea uno de estos, NO debemos robarle el focus al usuario.
+  const isInteractive = (el: EventTarget | null): boolean => {
+    if (!(el instanceof Element)) return false;
+    return !!el.closest("input, textarea, select, button, a, [contenteditable='true']");
+  };
 
   useEffect(() => {
     setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
     refocus();
-    const onClick = () => refocus();
+    const onClick = (e: MouseEvent) => {
+      // Si tocó un input/botón/etc, no robamos el focus.
+      if (isInteractive(e.target)) return;
+      refocus();
+    };
     const onVisibility = () => refocus();
     const onOnline = () => setOnline(true);
     const onOffline = () => setOnline(false);
@@ -415,7 +429,11 @@ export default function GuardScreen({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={refocus}
+        onBlur={(e) => {
+          // Si el focus se va a otro control (input/botón/etc), no se lo robamos.
+          if (isInteractive(e.relatedTarget)) return;
+          refocus();
+        }}
         autoFocus
         autoComplete="off"
         spellCheck={false}
