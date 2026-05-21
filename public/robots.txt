@@ -1,0 +1,17 @@
+# Solo permitimos indexar la home pública del root domain.
+# Los paneles de cada barrio (subdominios) NO deberían aparecer en Google
+# porque son privados y los datos de cada org no son públicos.
+
+User-agent: *
+Disallow: /admin
+Disallow: /guard
+Disallow: /resident
+Disallow: /super
+Disallow: /api
+Disallow: /signup/create
+Disallow: /v/
+
+# Permitimos solo la landing pública y el signup
+Allow: /$
+Allow: /signup$
+Allow: /login$

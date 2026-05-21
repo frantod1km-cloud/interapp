@@ -18,12 +18,19 @@ function fail(planId: string, msg: string): never {
 }
 
 function baseDomain(host: string): { proto: string; root: string } {
-  // En localhost devolvemos localhost:port. En prod, el dominio raíz.
+  // En localhost devolvemos localhost:port. En prod, el dominio raíz
+  // configurado en NEXT_PUBLIC_ROOT_DOMAIN o, si no está, intentamos
+  // inferirlo heurísticamente del host.
   const hostname = host.split(":")[0];
   const port = host.includes(":") ? `:${host.split(":")[1]}` : "";
   if (hostname === "localhost" || hostname.endsWith(".localhost")) {
     return { proto: "http", root: `localhost${port}` };
   }
+  const envRoot = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "").trim().toLowerCase();
+  if (envRoot) {
+    return { proto: "https", root: envRoot };
+  }
+  // Fallback: últimos 2 segmentos del host
   const parts = hostname.split(".");
   const root = parts.slice(-2).join(".");
   return { proto: "https", root };
