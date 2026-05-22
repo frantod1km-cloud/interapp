@@ -1,27 +1,40 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { addVehicleAction, removeVehicleAction } from "./actions";
+import VehicleResidentPicker from "./VehicleResidentPicker";
 
 export const dynamic = "force-dynamic";
 
 export default async function VehiclesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; q?: string }>;
 }) {
   const sp = await searchParams;
   const org = (await getCurrentOrg())!;
   const admin = createAdminClient();
 
+  let vehiclesQuery = admin
+    .from("vehicles")
+    .select("id, plate, make, model, color, resident_id, created_at, residents(first_name, last_name, unit, dni)")
+    .eq("organization_id", org.id)
+    .order("created_at", { ascending: false });
+
+  if (sp.q && sp.q.trim()) {
+    const term = sp.q.trim();
+    const safe = term.replace(/[%_]/g, (c) => `\\${c}`).toUpperCase();
+    // Buscar por patente, marca, modelo o color
+    vehiclesQuery = vehiclesQuery.or(
+      `plate.ilike.%${safe}%,make.ilike.%${term.replace(/[%_]/g, (c) => `\\${c}`)}%,model.ilike.%${term.replace(/[%_]/g, (c) => `\\${c}`)}%,color.ilike.%${term.replace(/[%_]/g, (c) => `\\${c}`)}%`,
+    );
+  }
+
   const [vehiclesResp, residentsResp] = await Promise.all([
-    admin
-      .from("vehicles")
-      .select("id, plate, make, model, color, resident_id, created_at, residents(first_name, last_name, unit)")
-      .eq("organization_id", org.id)
-      .order("created_at", { ascending: false }),
+    vehiclesQuery,
     admin
       .from("residents")
-      .select("id, first_name, last_name, unit, dni")
+      .select("id, first_name, last_name, unit, dni, kind")
       .eq("organization_id", org.id)
       .eq("active", true)
       .order("last_name"),
@@ -41,31 +54,46 @@ export default async function VehiclesPage({
         </div>
       )}
 
+      {/* Buscador */}
+      <form method="get" className="flex gap-2 mb-4">
+        <input
+          type="text"
+          name="q"
+          defaultValue={sp.q ?? ""}
+          placeholder="Buscar por patente, marca, modelo o color…"
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm"
+        />
+        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2 text-sm">
+          Buscar
+        </button>
+        {sp.q && (
+          <Link href="/admin/vehicles" className="text-sm text-zinc-400 hover:text-white self-center px-3">
+            Limpiar
+          </Link>
+        )}
+      </form>
+
+      {/* Form de alta — el picker de residente es un combobox con buscador */}
       <form
         action={addVehicleAction}
-        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-6 gap-3"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 space-y-3"
       >
-        <select name="resident_id" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
-          <option value="">Residente…</option>
-          {(residentsResp.data ?? []).map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.last_name}, {r.first_name} {r.unit ? `· ${r.unit}` : ""}
-            </option>
-          ))}
-        </select>
-        <input
-          name="plate"
-          placeholder="Patente (AA123BB)"
-          required
-          className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800 uppercase"
-          style={{ textTransform: "uppercase" }}
-        />
-        <input name="make" placeholder="Marca" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="model" placeholder="Modelo" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="color" placeholder="Color" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
-          Agregar
-        </button>
+        <VehicleResidentPicker residents={residentsResp.data ?? []} />
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <input
+            name="plate"
+            placeholder="Patente (AA123BB)"
+            required
+            className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800 uppercase"
+            style={{ textTransform: "uppercase" }}
+          />
+          <input name="make" placeholder="Marca" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <input name="model" placeholder="Modelo" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <input name="color" placeholder="Color" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
+            Agregar
+          </button>
+        </div>
       </form>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
@@ -107,7 +135,7 @@ export default async function VehiclesPage({
             {(!vehiclesResp.data || vehiclesResp.data.length === 0) && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
-                  Aún no hay vehículos cargados.
+                  {sp.q ? "Sin resultados para tu búsqueda." : "Aún no hay vehículos cargados."}
                 </td>
               </tr>
             )}

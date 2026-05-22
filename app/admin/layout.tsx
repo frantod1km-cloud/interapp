@@ -27,10 +27,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav className="flex gap-4 text-sm text-zinc-400 flex-wrap">
           <Link href="/admin" className="hover:text-white">Dashboard</Link>
           <Link href="/admin/residents" className="hover:text-white">Residentes</Link>
+          <Link href="/admin/personal-por-residente" className="hover:text-white">Personal por residente</Link>
+          <Link href="/admin/empleados" className="hover:text-white">🛠️ Empleados</Link>
           <Link href="/admin/vehicles" className="hover:text-white">Vehículos</Link>
           <Link href="/admin/packages" className="hover:text-white">📦 Paquetes</Link>
           <Link href="/admin/marketplace" className="hover:text-white">🛒 Marketplace</Link>
-          <Link href="/admin/access-rules" className="hover:text-white">Reglas</Link>
           <Link href="/admin/guards" className="hover:text-white">Guardias</Link>
           <Link href="/admin/gates" className="hover:text-white">Garitas</Link>
           <Link href="/admin/events" className="hover:text-white">Ingresos</Link>

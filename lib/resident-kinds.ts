@@ -8,7 +8,8 @@ export type ResidentKind =
   | "family"
   | "staff"
   | "domestic"
-  | "contractor";
+  | "contractor"
+  | "other";
 
 export const RESIDENT_KINDS: Array<{
   id: ResidentKind;
@@ -23,6 +24,7 @@ export const RESIDENT_KINDS: Array<{
   { id: "staff", label: "Empleado del barrio", short: "Empleado", emoji: "🛠️", className: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
   { id: "domestic", label: "Empleada doméstica fija", short: "Doméstica", emoji: "🧹", className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
   { id: "contractor", label: "Proveedor recurrente", short: "Proveedor", emoji: "🚚", className: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30" },
+  { id: "other", label: "Otro", short: "Otro", emoji: "📋", className: "bg-zinc-400/20 text-zinc-300 border-zinc-400/30" },
 ];
 
 export function kindMeta(id: string | null | undefined) {

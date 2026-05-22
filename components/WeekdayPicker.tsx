@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// Selector de días de la semana con chips individuales + atajos rápidos.
+// Selector de días de la semana con chips individuales.
 // Cada chip representa un bit del weekday_mask (bit 0 = domingo, ..., bit 6 = sábado).
 // Renderiza un input hidden con el valor agregado para que se envíe en el form.
 //
@@ -19,13 +19,6 @@ const DAYS = [
   { idx: 6, label: "Sáb" },
 ];
 
-const PRESETS = [
-  { label: "Todos", mask: 127 },
-  { label: "Lun-Vie", mask: 62 },
-  { label: "Sáb-Dom", mask: 65 },
-  { label: "Ninguno", mask: 0 },
-];
-
 export default function WeekdayPicker({
   name,
   defaultValue,
@@ -40,7 +33,7 @@ export default function WeekdayPicker({
   };
 
   return (
-    <div className="space-y-2">
+    <div>
       <input type="hidden" name={name} value={mask} />
       <div className="flex gap-1 flex-wrap">
         {DAYS.map((d) => {
@@ -61,19 +54,6 @@ export default function WeekdayPicker({
             </button>
           );
         })}
-      </div>
-      <div className="flex gap-1 flex-wrap">
-        <span className="text-xs text-zinc-400 self-center mr-1">Atajos:</span>
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            onClick={() => setMask(p.mask)}
-            className="text-xs px-2 py-1 rounded bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-          >
-            {p.label}
-          </button>
-        ))}
       </div>
     </div>
   );

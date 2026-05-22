@@ -40,6 +40,13 @@ export default async function AdminPackagesPage({
 
   if (status) query = query.eq("status", status);
 
+  if (sp.q && sp.q.trim()) {
+    const term = sp.q.trim();
+    const safe = term.replace(/[%_]/g, (c) => `\\${c}`);
+    // Buscamos en descripción y courier
+    query = query.or(`description.ilike.%${safe}%,courier.ilike.%${safe}%`);
+  }
+
   const { data: pkgs } = await query;
 
   // Conteos para los chips
@@ -59,14 +66,41 @@ export default async function AdminPackagesPage({
         al residente. Acá los podés ver, marcar entregados o devueltos.
       </p>
 
+      {/* Buscador */}
+      <form method="get" className="flex gap-2 mb-3">
+        {status && <input type="hidden" name="status" value={status} />}
+        <input
+          type="text"
+          name="q"
+          defaultValue={sp.q ?? ""}
+          placeholder="Buscar por descripción o mensajería…"
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm"
+        />
+        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2 text-sm">
+          Buscar
+        </button>
+        {sp.q && (
+          <Link
+            href={status ? `/admin/packages?status=${status}` : "/admin/packages"}
+            className="text-sm text-zinc-400 hover:text-white self-center px-3"
+          >
+            Limpiar
+          </Link>
+        )}
+      </form>
+
       <div className="flex flex-wrap gap-2 mb-6">
         {STATUS_FILTERS.map((f) => {
           const isActive = (status ?? "all") === f.id;
           const count = f.id === "all" ? total : counts[f.id] ?? 0;
+          const baseHref = f.id === "all" ? "/admin/packages" : `/admin/packages?status=${f.id}`;
+          const href = sp.q
+            ? `${baseHref}${baseHref.includes("?") ? "&" : "?"}q=${encodeURIComponent(sp.q)}`
+            : baseHref;
           return (
             <Link
               key={f.id}
-              href={f.id === "all" ? "/admin/packages" : `/admin/packages?status=${f.id}`}
+              href={href}
               className={`text-xs px-3 py-1.5 rounded-full border ${
                 isActive ? `${f.className} text-white` : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
               }`}

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function ResidentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ invited?: string; error?: string; kind?: string }>;
+  searchParams: Promise<{ invited?: string; error?: string; kind?: string; q?: string }>;
 }) {
   const sp = await searchParams;
   const org = (await getCurrentOrg())!;
@@ -26,6 +26,18 @@ export default async function ResidentsPage({
 
   if (sp.kind && RESIDENT_KINDS.some((k) => k.id === sp.kind)) {
     query = query.eq("kind", sp.kind);
+  }
+
+  // Buscador: por nombre, apellido, DNI parcial o unidad
+  if (sp.q && sp.q.trim()) {
+    const term = sp.q.trim();
+    const digits = term.replace(/\D/g, "");
+    if (digits.length >= 3) {
+      query = query.ilike("dni", `%${digits}%`);
+    } else {
+      const safe = term.replace(/[%_]/g, (c) => `\\${c}`);
+      query = query.or(`first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,unit.ilike.%${safe}%`);
+    }
   }
 
   const { data: residents } = await query;
@@ -91,13 +103,36 @@ export default async function ResidentsPage({
         </div>
       )}
 
+      {/* Buscador */}
+      <form method="get" className="flex gap-2 mb-3">
+        {sp.kind && <input type="hidden" name="kind" value={sp.kind} />}
+        <input
+          type="text"
+          name="q"
+          defaultValue={sp.q ?? ""}
+          placeholder="Buscar por nombre, apellido, DNI o unidad…"
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm"
+        />
+        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2 text-sm">
+          Buscar
+        </button>
+        {sp.q && (
+          <Link
+            href={sp.kind ? `/admin/residents?kind=${sp.kind}` : "/admin/residents"}
+            className="text-sm text-zinc-400 hover:text-white self-center px-3"
+          >
+            Limpiar
+          </Link>
+        )}
+      </form>
+
       {/* Filtros por categoría */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <FilterChip href="/admin/residents" active={!sp.kind} label={`Todos (${totalCount})`} />
+        <FilterChip href={sp.q ? `/admin/residents?q=${encodeURIComponent(sp.q)}` : "/admin/residents"} active={!sp.kind} label={`Todos (${totalCount})`} />
         {RESIDENT_KINDS.map((k) => (
           <FilterChip
             key={k.id}
-            href={`/admin/residents?kind=${k.id}`}
+            href={`/admin/residents?kind=${k.id}${sp.q ? `&q=${encodeURIComponent(sp.q)}` : ""}`}
             active={sp.kind === k.id}
             label={`${k.emoji} ${k.short} (${countsByKind.get(k.id) ?? 0})`}
           />

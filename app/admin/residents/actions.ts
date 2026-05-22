@@ -21,7 +21,7 @@ function fail(msg: string, hash?: string): never {
   redirect(`/admin/residents?error=${encodeURIComponent(msg)}${hash ? `#${hash}` : ""}`);
 }
 
-const ALLOWED_KINDS = new Set(["owner", "tenant", "family", "staff", "domestic", "contractor"]);
+const ALLOWED_KINDS = new Set(["owner", "tenant", "family", "staff", "domestic", "contractor", "other"]);
 
 export async function addResidentAction(formData: FormData) {
   const { orgId, userId } = await requireOrgAdmin();
