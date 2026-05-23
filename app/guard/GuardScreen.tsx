@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatDni, parseDni } from "@/lib/dni/parse";
+import { formatDni, looksLikeScannerInput, parseDni } from "@/lib/dni/parse";
 import type { LookupResult } from "@/lib/access/lookup";
 import { kindMeta } from "@/lib/resident-kinds";
 import {
@@ -331,9 +331,29 @@ export default function GuardScreen({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      // Si el contenido parece scan PDF417 pero todavía está incompleto
+      // (tiene comillas/arrobas pero pocos campos), no submiteamos. Esperamos
+      // a que el scanner termine de tipear. El auto-submit por timeout
+      // (debounce) lo va a procesar cuando dejen de llegar caracteres.
+      if (isScannerInputIncomplete(value)) return;
       submit(value);
     }
   };
+
+  // Auto-submit con debounce: si el scanner tipea letra por letra y no manda
+  // Enter al final (o lo manda en medio del proceso), cuando deje de llegar
+  // contenido por 600ms, procesamos lo que haya.
+  useEffect(() => {
+    if (!value) return;
+    if (screen.kind === "checking") return; // ya estamos procesando algo
+    const t = setTimeout(() => {
+      // Solo auto-submitear si parece un scan completo, o si es DNI manual válido
+      const parsed = parseDni(value);
+      if (parsed) submit(value);
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   // --- registro de evento ---
   const register = async (opts: {
@@ -671,7 +691,7 @@ function IdleView({ typing }: { typing: string }) {
   // Si es un scan PDF417 (incluye "@"), mostramos un mensaje genérico
   // porque el contenido del PDF417 es largo y feo.
   const showTyping = typing.length > 0;
-  const isScanning = typing.includes("@");
+  const isScanning = looksLikeScannerInput(typing);
   const displayTyping = isScanning ? "Escaneando…" : formatTyping(typing);
 
   return (
@@ -1411,6 +1431,17 @@ function formatTyping(s: string): string {
   const onlyDigits = /^\d+$/.test(s);
   if (!onlyDigits) return s;
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// Detecta si el contenido parece scan PDF417 pero todavía está incompleto.
+// Cuenta separadores (" o @): un scan completo del DNI argentino tiene al
+// menos 5 (5 separadores → 6 campos). Si tiene menos, el scanner todavía
+// está tipeando.
+function isScannerInputIncomplete(s: string): boolean {
+  if (!looksLikeScannerInput(s)) return false;
+  const sep = s.includes('"') ? '"' : "@";
+  const count = (s.match(new RegExp(`\\${sep}`, "g")) ?? []).length;
+  return count < 5;
 }
 
 function formatLastSeen(iso: string): string {
