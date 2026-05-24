@@ -1,12 +1,16 @@
 import type { LookupResult } from "@/lib/access/lookup";
 import { describeRule, isWithinAccessWindow } from "@/lib/access/rules";
+import { dniSearchForms } from "@/lib/dni/parse";
 import type { Snapshot } from "./db";
 
 // Versión cliente del lookup. Misma semántica que `lib/access/lookup.ts`,
 // pero trabaja sobre el snapshot cacheado en IndexedDB.
 
 export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
-  const resident = snap.residents.find((r) => r.dni === dni);
+  // Match tolerante: probamos varias formas del DNI (canónica + sin ceros)
+  // para que el snapshot funcione aunque el padrón viejo tenga inconsistencias.
+  const forms = new Set(dniSearchForms(dni));
+  const resident = snap.residents.find((r) => forms.has(r.dni));
   if (resident) {
     const fullName = `${resident.first_name} ${resident.last_name}`;
 
@@ -67,7 +71,7 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
   }
 
   const now = Date.now();
-  const matching = snap.authorizations.filter((a) => a.dni === dni);
+  const matching = snap.authorizations.filter((a) => forms.has(a.dni));
   const valid = matching.find((a) => new Date(a.valid_until).getTime() >= now);
   if (valid) {
     return {

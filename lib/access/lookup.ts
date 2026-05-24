@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { dniSearchForms } from "@/lib/dni/parse";
 import { describeRule, isWithinAccessWindow, type AccessRule } from "./rules";
 
 export type VehicleHint = {
@@ -85,14 +86,19 @@ export async function lookupDni(
 ): Promise<LookupResult> {
   const supabase = await createClient();
 
+  // Buscamos por todas las formas plausibles del DNI (con y sin ceros
+  // adelante) para ser tolerantes a datos viejos del padrón.
+  const dniForms = dniSearchForms(dni);
+
   // 1. ¿Es residente activo?
-  const { data: resident } = await supabase
+  const { data: residents } = await supabase
     .from("residents")
     .select("id, first_name, last_name, unit, unit_id, kind, weekday_mask, start_hour, end_hour, rule_enabled, access_expires_at")
     .eq("organization_id", organizationId)
-    .eq("dni", dni)
+    .in("dni", dniForms)
     .eq("active", true)
-    .maybeSingle();
+    .limit(1);
+  const resident = residents?.[0] ?? null;
 
   if (resident) {
     const fullName = `${resident.first_name} ${resident.last_name}`;
@@ -160,7 +166,7 @@ export async function lookupDni(
         .from("access_events")
         .select("occurred_at, direction, result")
         .eq("organization_id", organizationId)
-        .eq("dni", dni)
+        .in("dni", dniForms)
         .order("occurred_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -238,7 +244,7 @@ export async function lookupDni(
     .from("authorizations")
     .select("id, visitor_name, valid_until, revoked, resident_id, residents(first_name, last_name, unit, unit_id)")
     .eq("organization_id", organizationId)
-    .eq("dni", dni)
+    .in("dni", dniForms)
     .eq("revoked", false)
     .gte("valid_until", nowIso)
     .order("valid_until", { ascending: false })
@@ -256,7 +262,7 @@ export async function lookupDni(
       .from("access_events")
       .select("occurred_at, direction, result")
       .eq("organization_id", organizationId)
-      .eq("dni", dni)
+      .in("dni", dniForms)
       .order("occurred_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -282,7 +288,7 @@ export async function lookupDni(
     .from("authorizations")
     .select("id, visitor_name, valid_until")
     .eq("organization_id", organizationId)
-    .eq("dni", dni)
+    .in("dni", dniForms)
     .order("valid_until", { ascending: false })
     .limit(1);
 

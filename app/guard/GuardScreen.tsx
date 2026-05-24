@@ -215,11 +215,15 @@ export default function GuardScreen({
       setCompanionList([]);
       setNotes("");
       setVisitorName("");
-      // Si el residente ya tiene una unit_id, la usamos como default
-      const defaultUnit =
-        screen.result.state === "authorized" && screen.result.unitId
-          ? screen.result.unitId
-          : "";
+      // Pre-seleccionamos la unidad del residente:
+      //   - Si tiene unit_id (tabla units nueva) → usar ese id
+      //   - Si solo tiene unit text (legacy) → usar como texto libre "FREE:<label>"
+      //   - Si no tiene nada → vacío
+      let defaultUnit = "";
+      if (screen.result.state === "authorized") {
+        if (screen.result.unitId) defaultUnit = screen.result.unitId;
+        else if (screen.result.unitLabel) defaultUnit = `FREE:${screen.result.unitLabel}`;
+      }
       setDestinationUnitId(defaultUnit);
     } else if (screen.kind !== "result") {
       setSelectedPlate("");
@@ -399,7 +403,22 @@ export default function GuardScreen({
     const eventModel = isOther ? customModel.trim() || null : null;
     const eventColor = isOther ? customColor.trim() || null : null;
 
-    const destUnit = units.find((u) => u.id === destinationUnitId) ?? null;
+    // destinationUnitId puede ser:
+    //   "" → sin asignar
+    //   "FREE:<texto>" → texto libre (sin id)
+    //   "<uuid>" → id de tabla units
+    let destUnitId: string | null = null;
+    let destUnitLabel: string | null = null;
+    if (destinationUnitId.startsWith("FREE:")) {
+      const free = destinationUnitId.slice(5).trim();
+      destUnitLabel = free || null;
+    } else if (destinationUnitId) {
+      const u = units.find((x) => x.id === destinationUnitId);
+      if (u) {
+        destUnitId = u.id;
+        destUnitLabel = u.label;
+      }
+    }
 
     const event: QueuedEvent = {
       client_id: uuid(),
@@ -427,8 +446,8 @@ export default function GuardScreen({
       companions: companionList.length,
       companions_data: companionList,
       notes: notes.trim() || null,
-      destination_unit_id: destUnit?.id ?? null,
-      destination_unit_label: destUnit?.label ?? null,
+      destination_unit_id: destUnitId,
+      destination_unit_label: destUnitLabel,
     };
 
     // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
@@ -1088,11 +1107,7 @@ function ResultView({
           units={units}
           value={destinationUnitId}
           onChange={setDestinationUnitId}
-          suggestedUnitId={
-            result.state === "out_of_window" || result.state === "access_expired"
-              ? null
-              : null
-          }
+          suggestedUnitId={null}
           suggestedUnitLabel={null}
           direction={direction}
         />
@@ -1473,10 +1488,16 @@ function VehiclePicker({
   );
 }
 
-// Selector de unidad de destino. En la mayoría de los casos el residente
-// ya tiene una unidad asignada y la dejamos pre-seleccionada (suggested).
-// Para visitantes/desconocidos, el guardia tiene que elegir a dónde van.
-// Si el barrio no tiene unidades cargadas, el bloque no se renderiza.
+// Selector de unidad de destino. Siempre se renderiza:
+//   - Si el barrio tiene unidades cargadas (tabla `units`): dropdown con
+//     ellas + "Otra (escribir)" para texto libre.
+//   - Si no hay unidades cargadas: input de texto libre directo (el guardia
+//     tipea "Lote 159" o lo que sea).
+//
+// `value` puede ser:
+//   - "" → sin asignar
+//   - "FREE:<texto>" → texto libre (se guarda en destination_unit_label)
+//   - "<uuid>" → id de la tabla units (se guarda id + label)
 function DestinationPicker({
   units,
   value,
@@ -1492,11 +1513,41 @@ function DestinationPicker({
   suggestedUnitLabel: string | null;
   direction: "in" | "out";
 }) {
-  if (units.length === 0) return null;
+  const label = direction === "in" ? "¿A qué unidad va?" : "¿De qué unidad sale?";
+
+  // Caso sin unidades cargadas: input de texto libre nada más.
+  if (units.length === 0) {
+    const freeText = value.startsWith("FREE:") ? value.slice(5) : "";
+    return (
+      <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs uppercase tracking-wider opacity-80">{label}</span>
+          {suggestedUnitLabel && (
+            <button
+              type="button"
+              onClick={() => onChange(`FREE:${suggestedUnitLabel}`)}
+              className="text-xs opacity-70 hover:opacity-100 underline"
+            >
+              Usar: {suggestedUnitLabel}
+            </button>
+          )}
+        </div>
+        <input
+          type="text"
+          value={freeText}
+          onChange={(e) => onChange(e.target.value ? `FREE:${e.target.value}` : "")}
+          placeholder={suggestedUnitLabel ?? "Ej: Lote 42, Depto 3B, Local 7"}
+          className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+        />
+        <p className="text-[10px] opacity-60 mt-1">
+          💡 Cargá tus unidades en <span className="underline">/admin/unidades</span> para tener un listado fijo.
+        </p>
+      </div>
+    );
+  }
 
   // Si la unidad sugerida no está en la lista (residente con unit_id viejo
-  // o la unidad se desactivó), la mostramos igual para que el guardia la
-  // pueda elegir como referencia.
+  // o la unidad se desactivó), la agregamos arriba para que se pueda elegir.
   const allOptions = (() => {
     if (
       suggestedUnitId &&
@@ -1508,12 +1559,13 @@ function DestinationPicker({
     return units;
   })();
 
+  const isFreeText = value.startsWith("FREE:");
+  const freeText = isFreeText ? value.slice(5) : "";
+
   return (
     <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs uppercase tracking-wider opacity-80">
-          {direction === "in" ? "¿A qué unidad va?" : "¿De qué unidad sale?"}
-        </span>
+        <span className="text-xs uppercase tracking-wider opacity-80">{label}</span>
         {suggestedUnitLabel && (
           <span className="text-xs opacity-70">
             Sugerido: <strong className="opacity-100">{suggestedUnitLabel}</strong>
@@ -1521,8 +1573,12 @@ function DestinationPicker({
         )}
       </div>
       <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={isFreeText ? "__FREE__" : value}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "__FREE__") onChange("FREE:");
+          else onChange(v);
+        }}
         className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm"
       >
         <option value="">— Sin asignar —</option>
@@ -1531,7 +1587,18 @@ function DestinationPicker({
             {u.label}
           </option>
         ))}
+        <option value="__FREE__">✏️ Otra (escribir)</option>
       </select>
+      {isFreeText && (
+        <input
+          type="text"
+          value={freeText}
+          autoFocus
+          onChange={(e) => onChange(`FREE:${e.target.value}`)}
+          placeholder="Ej: Lote 42, Depto 3B, Local 7"
+          className="w-full mt-2 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+        />
+      )}
     </div>
   );
 }

@@ -76,6 +76,26 @@ function normalizeDniDigits(s: string): string {
 }
 
 /**
+ * Devuelve todas las formas plausibles bajo las que un DNI puede estar
+ * almacenado en la DB, para que el lookup haga match aunque el padrón viejo
+ * tenga inconsistencias. Cubre:
+ *   - forma canónica (8 dígitos con padding)
+ *   - sin ceros a la izquierda (gente que cargó "3332301")
+ *   - el input crudo (defensa contra strings con caracteres raros)
+ *
+ * Si la lista tiene un solo elemento, igual la devolvemos como array para
+ * que el caller use `.in()` sin ramificar.
+ */
+export function dniSearchForms(s: string | null | undefined): string[] {
+  if (!s) return [];
+  const canonical = normalizeDni(s);
+  if (!canonical) return [];
+  const stripped = canonical.replace(/^0+/, "") || canonical;
+  const forms = new Set<string>([canonical, stripped]);
+  return Array.from(forms);
+}
+
+/**
  * Devuelve true si el input parece ser un scan PDF417 (tiene comillas o @ como
  * separador). Útil para distinguir "está escaneando" de "está tipeando manual".
  */
