@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { logAudit } from "@/lib/audit";
+import { normalizeDni } from "@/lib/dni/parse";
 
 async function requireOrgAdmin(): Promise<{ orgId: string; userId: string }> {
   const org = await getCurrentOrg();
@@ -26,7 +27,7 @@ const ALLOWED_KINDS = new Set(["owner", "tenant", "family", "staff", "domestic",
 export async function addResidentAction(formData: FormData) {
   const { orgId, userId } = await requireOrgAdmin();
 
-  const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(String(formData.get("dni") ?? ""));
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
   const unitId = String(formData.get("unit_id") ?? "").trim() || null;

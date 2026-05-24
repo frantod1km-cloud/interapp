@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatDni, parseDni } from "@/lib/dni/parse";
+import { formatDni, normalizeDni, parseDni } from "@/lib/dni/parse";
 import { kindMeta } from "@/lib/resident-kinds";
 
 // Modal para agregar un acompañante al ingreso. Funciona como un mini
@@ -105,9 +105,9 @@ export default function CompanionPicker({
   };
 
   const addManual = () => {
-    const dni = manualDni.replace(/\D/g, "");
+    const dni = normalizeDni(manualDni);
     const name = manualName.trim();
-    if (!dni || dni.length < 7) {
+    if (!dni || dni.length < 8) {
       alert("DNI inválido");
       return;
     }

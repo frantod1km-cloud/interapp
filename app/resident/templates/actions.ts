@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { normalizeDni } from "@/lib/dni/parse";
 
 async function currentResident(): Promise<{ orgId: string; residentId: string }> {
   const org = await getCurrentOrg();
@@ -29,7 +30,7 @@ function fail(msg: string): never {
 export async function createTemplateAction(formData: FormData) {
   const { orgId, residentId } = await currentResident();
   const label = String(formData.get("label") ?? "").trim();
-  const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(String(formData.get("dni") ?? ""));
   const visitorName = String(formData.get("visitor_name") ?? "").trim();
   const defaultUntilHour = parseInt(String(formData.get("default_until_hour") ?? "18"));
   const notes = String(formData.get("notes") ?? "").trim() || null;

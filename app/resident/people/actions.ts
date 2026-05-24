@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { normalizeDni } from "@/lib/dni/parse";
 
 const ALLOWED_KINDS = new Set(["domestic", "contractor"]);
 
@@ -30,7 +31,7 @@ function fail(msg: string): never {
 export async function addPersonAction(formData: FormData): Promise<void> {
   const { orgId, residentId } = await currentResident();
 
-  const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(String(formData.get("dni") ?? ""));
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
   const kindRaw = String(formData.get("kind") ?? "");

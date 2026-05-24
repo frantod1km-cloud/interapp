@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
+import { normalizeDni } from "@/lib/dni/parse";
 
 async function currentResidentId(): Promise<{ orgId: string; residentId: string }> {
   const org = await getCurrentOrg();
@@ -31,7 +32,7 @@ function defaultValidUntil(): string {
 
 export async function authorizeVisitAction(formData: FormData) {
   const { orgId, residentId } = await currentResidentId();
-  const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(String(formData.get("dni") ?? ""));
   const name = String(formData.get("visitor_name") ?? "").trim();
   const validUntil = String(formData.get("valid_until") ?? "");
 

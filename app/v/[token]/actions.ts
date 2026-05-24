@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
+import { normalizeDni } from "@/lib/dni/parse";
 
 function fail(token: string, msg: string): never {
   redirect(`/v/${token}?error=${encodeURIComponent(msg)}`);
@@ -10,7 +11,7 @@ function fail(token: string, msg: string): never {
 
 export async function claimInviteAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
-  const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(String(formData.get("dni") ?? ""));
   const name = String(formData.get("visitor_name") ?? "").trim();
 
   if (!token) throw new Error("Token inválido");

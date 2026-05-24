@@ -45,12 +45,34 @@ function dateToIso(s: string): string | undefined {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * Forma canónica de un DNI argentino: 8 dígitos con cero a la izquierda.
+ *
+ * Por qué:
+ *   - Los DNI viejos (gente mayor) son de 7 dígitos.
+ *   - Los lectores PDF417 los devuelven tal cual (7 dígitos).
+ *   - Los admins suelen tipearlos rellenados a 8 (Excel, padrón viejo).
+ *   - Si normalizamos a una sola forma, el lookup funciona siempre.
+ *
+ * Reglas:
+ *   - <= 8 dígitos → padeamos con ceros a la izquierda hasta 8.
+ *   - 9+ dígitos (extranjeros, IDs raros) → se respeta tal cual.
+ *   - El input vacío o todo no-dígitos → "".
+ */
+export function normalizeDni(s: string | null | undefined): string {
+  if (!s) return "";
+  const onlyDigits = String(s).replace(/[^\d]/g, "");
+  if (!onlyDigits) return "";
+  // Sacar ceros a la izquierda para medir el "tamaño real"
+  const stripped = onlyDigits.replace(/^0+/, "") || "0";
+  // <= 8 dígitos: forma canónica argentina (8 con padding)
+  if (stripped.length <= 8) return stripped.padStart(8, "0");
+  // 9+ dígitos: se devuelve como viene (sin ceros sobrantes)
+  return stripped;
+}
+
 function normalizeDniDigits(s: string): string {
-  // Sacamos puntos, espacios y ceros a la izquierda. NO devolvemos sin ceros
-  // si el resultado queda vacío (caso "00000000" → "" no tiene sentido).
-  const onlyDigits = s.replace(/[^\d]/g, "");
-  const noLeading = onlyDigits.replace(/^0+/, "");
-  return noLeading || onlyDigits;
+  return normalizeDni(s);
 }
 
 /**
@@ -92,7 +114,9 @@ export function parseDni(input: string): ParsedDni | null {
     //   parts[offset+5] = fecha nacimiento (mismo offset relativo)
     const birthRaw = parts[offset + 5] || "";
 
-    if (!dniDigits || dniDigits.length < 6) return null;
+    // dniDigits ya viene padeado a 8 (forma canónica) por normalizeDni.
+    // Aceptamos cualquier valor con al menos 7 dígitos "reales".
+    if (!dniDigits || dniDigits.replace(/^0+/, "").length < 6) return null;
 
     return {
       dni: dniDigits,
@@ -108,9 +132,13 @@ export function parseDni(input: string): ParsedDni | null {
     };
   }
 
-  // Caso 2: input son solo dígitos (tipeo manual)
+  // Caso 2: input son solo dígitos (tipeo manual). La normalización deja
+  // siempre 8 dígitos para DNI argentinos (paddea con ceros). Aceptamos
+  // entre 7 y 9 dígitos "reales" para cubrir DNI nuevos, DNI viejos y
+  // documentos de extranjeros.
   const digits = normalizeDniDigits(raw);
-  if (digits.length >= 7 && digits.length <= 9) {
+  const realLen = digits.replace(/^0+/, "").length || digits.length;
+  if (realLen >= 6 && digits.length <= 10) {
     return { dni: digits, raw, source: "manual" };
   }
 

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { logAudit } from "@/lib/audit";
+import { normalizeDni } from "@/lib/dni/parse";
 
 // Parser CSV simple. No usa librería externa.
 // Detecta separador (coma, ; o tab), maneja comillas dobles y filas vacías.
@@ -92,13 +93,15 @@ export async function importResidentsAction(formData: FormData) {
       errors.push(`Fila ${i + 1}: faltan columnas (esperamos dni, nombre, apellido al menos)`);
       continue;
     }
-    const dni = cells[0].replace(/\D/g, "");
+    const dni = normalizeDni(cells[0]);
     const firstName = cells[1];
     const lastName = cells[2];
     const unit = cells[3]?.trim() || null;
     const phone = cells[4]?.trim() || null;
 
-    if (!dni || dni.length < 7 || dni.length > 9) {
+    // dni ya viene padeado a 8 dígitos. Aceptamos 8 dígitos (DNI estándar)
+    // o más (extranjeros con ID largo).
+    if (!dni || dni.length < 8 || dni.length > 10) {
       errors.push(`Fila ${i + 1}: DNI inválido ("${cells[0]}")`);
       continue;
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { lookupDni } from "@/lib/access/lookup";
+import { normalizeDni } from "@/lib/dni/parse";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const dni = (url.searchParams.get("dni") ?? "").replace(/\D/g, "");
+  const dni = normalizeDni(url.searchParams.get("dni") ?? "");
   if (!dni) return NextResponse.json({ error: "bad_dni" }, { status: 400 });
 
   const result = await lookupDni(org.id, dni);
