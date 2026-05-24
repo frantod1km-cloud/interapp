@@ -22,6 +22,41 @@ function fail(msg: string, path = "/admin/unidades"): never {
 }
 
 // ---------------------------------------------------------------------------
+// RESETEO TOTAL del árbol de unidades.
+// ---------------------------------------------------------------------------
+// Borra todas las unidades del barrio. Bloquea si hay residentes apuntando
+// a alguna (sino quedan huérfanos). Usado por el wizard cuando el admin
+// quiere cambiar la cantidad de niveles.
+export async function resetAllUnitsAction(formData: FormData) {
+  const { orgId } = await requireOrgAdmin();
+  const confirm = String(formData.get("confirm") ?? "");
+  if (confirm !== "BORRAR TODO") {
+    fail(
+      'Tenés que escribir exactamente "BORRAR TODO" para confirmar.',
+      "/admin/setup/unidades",
+    );
+  }
+
+  const admin = createAdminClient();
+  // Si hay residentes con unit_id, los desvinculamos a NULL primero. El texto
+  // legacy (`unit` field) lo mantenemos para que el migrador después los
+  // pueda re-asociar al nuevo árbol.
+  await admin
+    .from("residents")
+    .update({ unit_id: null })
+    .eq("organization_id", orgId)
+    .not("unit_id", "is", null);
+
+  // Ahora sí, borramos todas las unidades. CASCADE en parent_id se encarga
+  // de la jerarquía.
+  await admin.from("units").delete().eq("organization_id", orgId);
+
+  revalidatePath("/admin/unidades");
+  revalidatePath("/admin/setup/unidades");
+  redirect("/admin/setup/unidades?reset=1");
+}
+
+// ---------------------------------------------------------------------------
 // SETUP de niveles del barrio (wizard)
 // ---------------------------------------------------------------------------
 // Recibe un array de strings (los nombres de los niveles, de mayor a menor).
