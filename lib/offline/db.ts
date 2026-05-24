@@ -82,6 +82,8 @@ export type QueuedEvent = {
     authorization_id?: string | null;
   }>;
   notes: string | null;       // texto libre opcional
+  destination_unit_id: string | null;     // unidad de destino (Lote 42, Depto 3B, etc.)
+  destination_unit_label: string | null;  // copia textual para histórico aunque la unidad se borre
 };
 
 function openDb(): Promise<IDBDatabase> {

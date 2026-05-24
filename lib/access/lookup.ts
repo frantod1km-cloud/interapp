@@ -37,6 +37,8 @@ export type LookupResult =
       pendingPackages?: number; // paquetes esperando que retire
       reservations?: ReservationHint[]; // reservas activas / próximas hoy
       lastEvent?: LastEventHint | null; // último ingreso/egreso registrado
+      unitId?: string | null;   // id de la unidad del residente (si tiene)
+      unitLabel?: string | null;// label de esa unidad para display rápido
     }
   | {
       state: "expired";
@@ -86,7 +88,7 @@ export async function lookupDni(
   // 1. ¿Es residente activo?
   const { data: resident } = await supabase
     .from("residents")
-    .select("id, first_name, last_name, unit, kind, weekday_mask, start_hour, end_hour, rule_enabled, access_expires_at")
+    .select("id, first_name, last_name, unit, unit_id, kind, weekday_mask, start_hour, end_hour, rule_enabled, access_expires_at")
     .eq("organization_id", organizationId)
     .eq("dni", dni)
     .eq("active", true)
@@ -225,6 +227,8 @@ export async function lookupDni(
       pendingPackages: pendingPackages ?? 0,
       reservations,
       lastEvent,
+      unitId: resident.unit_id ?? null,
+      unitLabel: resident.unit ?? null,
     };
   }
 
@@ -232,7 +236,7 @@ export async function lookupDni(
   const nowIso = new Date().toISOString();
   const { data: auths } = await supabase
     .from("authorizations")
-    .select("id, visitor_name, valid_until, revoked, resident_id, residents(first_name, last_name)")
+    .select("id, visitor_name, valid_until, revoked, resident_id, residents(first_name, last_name, unit, unit_id)")
     .eq("organization_id", organizationId)
     .eq("dni", dni)
     .eq("revoked", false)
@@ -244,6 +248,8 @@ export async function lookupDni(
   if (valid) {
     const r = Array.isArray(valid.residents) ? valid.residents[0] : valid.residents;
     const host = r ? `${r.first_name} ${r.last_name}` : "Residente";
+    const hostUnitId = r && "unit_id" in r ? (r as { unit_id: string | null }).unit_id : null;
+    const hostUnitLabel = r && "unit" in r ? (r as { unit: string | null }).unit : null;
 
     // Último ingreso del visitante (útil para que el guardia sepa si ya entró)
     const { data: lastEv } = await supabase
@@ -266,6 +272,8 @@ export async function lookupDni(
       lastEvent: lastEv
         ? { occurred_at: lastEv.occurred_at, direction: lastEv.direction as "in" | "out", result: lastEv.result }
         : null,
+      unitId: hostUnitId,
+      unitLabel: hostUnitLabel,
     };
   }
 

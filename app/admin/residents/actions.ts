@@ -29,6 +29,7 @@ export async function addResidentAction(formData: FormData) {
   const dni = String(formData.get("dni") ?? "").replace(/\D/g, "");
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
+  const unitId = String(formData.get("unit_id") ?? "").trim() || null;
   const unit = String(formData.get("unit") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
   const kindRaw = String(formData.get("kind") ?? "owner");
@@ -39,7 +40,16 @@ export async function addResidentAction(formData: FormData) {
   const supabase = await createClient();
   const { data: created, error } = await supabase
     .from("residents")
-    .insert({ organization_id: orgId, dni, first_name: firstName, last_name: lastName, unit, phone, kind })
+    .insert({
+      organization_id: orgId,
+      dni,
+      first_name: firstName,
+      last_name: lastName,
+      unit_id: unitId,
+      unit,
+      phone,
+      kind,
+    })
     .select("id")
     .single();
   if (error) fail(error.message);
@@ -50,7 +60,7 @@ export async function addResidentAction(formData: FormData) {
     action: "resident.create",
     entityType: "resident",
     entityId: created?.id,
-    metadata: { dni, name: `${firstName} ${lastName}`, unit, kind },
+    metadata: { dni, name: `${firstName} ${lastName}`, unit, unit_id: unitId, kind },
   });
 
   revalidatePath("/admin/residents");

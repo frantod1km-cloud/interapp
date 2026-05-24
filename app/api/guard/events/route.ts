@@ -36,6 +36,8 @@ type IncomingEvent = {
     authorization_id?: string | null;
   }>;
   notes?: string | null;
+  destination_unit_id?: string | null;
+  destination_unit_label?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -78,6 +80,8 @@ export async function POST(req: Request) {
     companions: typeof e.companions === "number" && e.companions >= 0 ? e.companions : 0,
     companions_data: Array.isArray(e.companions_data) ? e.companions_data : [],
     notes: e.notes?.trim() || null,
+    destination_unit_id: e.destination_unit_id ?? null,
+    destination_unit_label: e.destination_unit_label?.trim() || null,
     occurred_at: e.occurred_at,
     synced_at: new Date().toISOString(),
   }));

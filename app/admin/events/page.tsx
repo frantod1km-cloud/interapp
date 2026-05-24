@@ -38,7 +38,7 @@ export default async function EventsPage({
 
   let query = supabase
     .from("access_events")
-    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, companions_data, notes, gate_label")
+    .select("id, dni, full_name, direction, result, reason, occurred_at, vehicle_plate, vehicle_make, vehicle_model, vehicle_color, companions, companions_data, notes, gate_label, destination_unit_label")
     .eq("organization_id", org.id)
     .gte("occurred_at", range.from.toISOString())
     .lte("occurred_at", range.to.toISOString())
@@ -97,6 +97,7 @@ export default async function EventsPage({
               <th className="px-4 py-3">Persona</th>
               <th className="px-4 py-3">DNI</th>
               <th className="px-4 py-3">Sentido</th>
+              <th className="px-4 py-3">Unidad</th>
               <th className="px-4 py-3">Resultado</th>
               <th className="px-4 py-3">Patente</th>
               <th className="px-4 py-3">+ pers.</th>
@@ -124,6 +125,9 @@ export default async function EventsPage({
                     ) : (
                       <span className="text-sky-300">↗ Salida</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-300">
+                    {e.destination_unit_label ?? <span className="text-zinc-600">—</span>}
                   </td>
                   <td className={`px-4 py-3 font-medium ${r.className}`}>{r.label}</td>
                   <td className="px-4 py-3 font-mono text-zinc-400">
@@ -178,7 +182,7 @@ export default async function EventsPage({
             })}
             {(!events || events.length === 0) && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-zinc-400">
                   Sin eventos en este rango.
                 </td>
               </tr>

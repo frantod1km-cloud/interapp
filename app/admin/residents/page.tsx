@@ -6,6 +6,7 @@ import { RESIDENT_KINDS } from "@/lib/resident-kinds";
 import { addResidentAction, toggleResidentActiveAction } from "./actions";
 import InviteButton from "./InviteButton";
 import KindSelector from "./KindSelector";
+import UnitPicker from "./UnitPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,14 @@ export default async function ResidentsPage({
   }
 
   const { data: residents } = await query;
+
+  // Lista de unidades activas del barrio para el picker de alta
+  const { data: units } = await admin
+    .from("units")
+    .select("id, label, kind")
+    .eq("organization_id", org.id)
+    .eq("active", true)
+    .order("label");
 
   const emailsMap = new Map<string, string>();
   for (const r of residents ?? []) {
@@ -139,23 +148,22 @@ export default async function ResidentsPage({
         ))}
       </div>
 
-      <form
-        action={addResidentAction}
-        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-7 gap-3"
-      >
-        <select name="kind" defaultValue="owner" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
-          {RESIDENT_KINDS.map((k) => (
-            <option key={k.id} value={k.id}>
-              {k.emoji} {k.short}
-            </option>
-          ))}
-        </select>
-        <input name="dni" placeholder="DNI" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="first_name" placeholder="Nombre" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="last_name" placeholder="Apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="unit" placeholder="Lote / Depto" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <input name="phone" placeholder="Teléfono" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-        <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
+      <form action={addResidentAction} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-6 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <select name="kind" defaultValue="owner" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
+            {RESIDENT_KINDS.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.emoji} {k.short}
+              </option>
+            ))}
+          </select>
+          <input name="dni" placeholder="DNI" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <input name="first_name" placeholder="Nombre" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <input name="last_name" placeholder="Apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <input name="phone" placeholder="Teléfono" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+          <UnitPicker units={units ?? []} />
+        </div>
+        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
           Agregar
         </button>
       </form>

@@ -32,17 +32,26 @@ export default async function GuardPage() {
   }
 
   const supabase = await createClient();
-  const { data: gates } = await supabase
-    .from("gates")
-    .select("id, name")
-    .eq("organization_id", org.id)
-    .eq("active", true)
-    .order("name");
+  const [{ data: gates }, { data: units }] = await Promise.all([
+    supabase
+      .from("gates")
+      .select("id, name")
+      .eq("organization_id", org.id)
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("units")
+      .select("id, label")
+      .eq("organization_id", org.id)
+      .eq("active", true)
+      .order("label"),
+  ]);
 
   return (
     <GuardScreen
       orgName={org.name}
       gates={gates ?? []}
+      units={units ?? []}
       isLead={role === "guard_lead" || role === "org_admin"}
     />
   );

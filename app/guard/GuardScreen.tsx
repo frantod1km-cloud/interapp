@@ -35,13 +35,17 @@ type Gate = { id: string; name: string };
 
 const GATE_LS_KEY = "interapp.guard.gate";
 
+type Unit = { id: string; label: string };
+
 export default function GuardScreen({
   orgName,
   gates,
+  units,
   isLead,
 }: {
   orgName: string;
   gates: Gate[];
+  units: Unit[];
   isLead: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +68,7 @@ export default function GuardScreen({
   const [showCompanionPicker, setShowCompanionPicker] = useState(false);
   const [notes, setNotes] = useState<string>("");
   const [visitorName, setVisitorName] = useState<string>("");
+  const [destinationUnitId, setDestinationUnitId] = useState<string>("");
 
   const currentGate = gates.find((g) => g.id === gateId) ?? null;
 
@@ -210,6 +215,12 @@ export default function GuardScreen({
       setCompanionList([]);
       setNotes("");
       setVisitorName("");
+      // Si el residente ya tiene una unit_id, la usamos como default
+      const defaultUnit =
+        screen.result.state === "authorized" && screen.result.unitId
+          ? screen.result.unitId
+          : "";
+      setDestinationUnitId(defaultUnit);
     } else if (screen.kind !== "result") {
       setSelectedPlate("");
       setCustomPlate("");
@@ -219,6 +230,7 @@ export default function GuardScreen({
       setCompanionList([]);
       setNotes("");
       setVisitorName("");
+      setDestinationUnitId("");
     }
   }, [screen]);
 
@@ -387,6 +399,8 @@ export default function GuardScreen({
     const eventModel = isOther ? customModel.trim() || null : null;
     const eventColor = isOther ? customColor.trim() || null : null;
 
+    const destUnit = units.find((u) => u.id === destinationUnitId) ?? null;
+
     const event: QueuedEvent = {
       client_id: uuid(),
       dni: r.dni,
@@ -413,6 +427,8 @@ export default function GuardScreen({
       companions: companionList.length,
       companions_data: companionList,
       notes: notes.trim() || null,
+      destination_unit_id: destUnit?.id ?? null,
+      destination_unit_label: destUnit?.label ?? null,
     };
 
     // Estrategia: siempre encolar primero (durabilidad), después intentar flush.
@@ -646,6 +662,9 @@ export default function GuardScreen({
             setNotes={setNotes}
             visitorName={visitorName}
             setVisitorName={setVisitorName}
+            units={units}
+            destinationUnitId={destinationUnitId}
+            setDestinationUnitId={setDestinationUnitId}
           />
         )}
         {screen.kind === "confirmed" && <ConfirmedView message={screen.message} />}
@@ -803,6 +822,9 @@ function ResultView({
   setNotes,
   visitorName,
   setVisitorName,
+  units,
+  destinationUnitId,
+  setDestinationUnitId,
 }: {
   result: LookupResult;
   scannedName?: string;
@@ -828,6 +850,9 @@ function ResultView({
   setNotes: (s: string) => void;
   visitorName: string;
   setVisitorName: (s: string) => void;
+  units: Unit[];
+  destinationUnitId: string;
+  setDestinationUnitId: (s: string) => void;
 }) {
   const dniDisplay = formatDni(result.dni);
   const actionLabel = direction === "in" ? "Registrar entrada" : "Registrar salida";
@@ -862,6 +887,16 @@ function ResultView({
           customColor={customColor}
           setCustomColor={setCustomColor}
         />
+
+        <DestinationPicker
+          units={units}
+          value={destinationUnitId}
+          onChange={setDestinationUnitId}
+          suggestedUnitId={result.unitId ?? null}
+          suggestedUnitLabel={result.unitLabel ?? null}
+          direction={direction}
+        />
+
         {result.pendingPackages && result.pendingPackages > 0 ? (
           <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>
@@ -1047,6 +1082,19 @@ function ResultView({
           setCustomModel={setCustomModel}
           customColor={customColor}
           setCustomColor={setCustomColor}
+        />
+
+        <DestinationPicker
+          units={units}
+          value={destinationUnitId}
+          onChange={setDestinationUnitId}
+          suggestedUnitId={
+            result.state === "out_of_window" || result.state === "access_expired"
+              ? null
+              : null
+          }
+          suggestedUnitLabel={null}
+          direction={direction}
         />
       </div>
 
@@ -1421,6 +1469,69 @@ function VehiclePicker({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// Selector de unidad de destino. En la mayoría de los casos el residente
+// ya tiene una unidad asignada y la dejamos pre-seleccionada (suggested).
+// Para visitantes/desconocidos, el guardia tiene que elegir a dónde van.
+// Si el barrio no tiene unidades cargadas, el bloque no se renderiza.
+function DestinationPicker({
+  units,
+  value,
+  onChange,
+  suggestedUnitId,
+  suggestedUnitLabel,
+  direction,
+}: {
+  units: Unit[];
+  value: string;
+  onChange: (s: string) => void;
+  suggestedUnitId: string | null;
+  suggestedUnitLabel: string | null;
+  direction: "in" | "out";
+}) {
+  if (units.length === 0) return null;
+
+  // Si la unidad sugerida no está en la lista (residente con unit_id viejo
+  // o la unidad se desactivó), la mostramos igual para que el guardia la
+  // pueda elegir como referencia.
+  const allOptions = (() => {
+    if (
+      suggestedUnitId &&
+      suggestedUnitLabel &&
+      !units.some((u) => u.id === suggestedUnitId)
+    ) {
+      return [{ id: suggestedUnitId, label: suggestedUnitLabel }, ...units];
+    }
+    return units;
+  })();
+
+  return (
+    <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-xs uppercase tracking-wider opacity-80">
+          {direction === "in" ? "¿A qué unidad va?" : "¿De qué unidad sale?"}
+        </span>
+        {suggestedUnitLabel && (
+          <span className="text-xs opacity-70">
+            Sugerido: <strong className="opacity-100">{suggestedUnitLabel}</strong>
+          </span>
+        )}
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm"
+      >
+        <option value="">— Sin asignar —</option>
+        {allOptions.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
