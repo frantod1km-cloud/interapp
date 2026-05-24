@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDni } from "@/lib/dni/parse";
 import { claimInviteAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -39,13 +41,53 @@ export default async function ClaimInvitePage({
   const expired = new Date(auth.valid_until) < new Date();
 
   if (sp.done === "1" || auth.claimed_at) {
+    // Generamos un QR con el DNI normalizado del visitante. El guardia lo
+    // escanea con su pistola (o cualquier app) y dispara el mismo lookup
+    // que con el DNI físico. SVG renderizado server-side, sin JS en el cliente.
+    const dniForQr = auth.dni ?? "";
+    const qrSvg = dniForQr
+      ? await QRCode.toString(dniForQr, {
+          type: "svg",
+          margin: 1,
+          width: 280,
+          color: { dark: "#000000", light: "#FFFFFF" },
+          errorCorrectionLevel: "M",
+        })
+      : null;
+
     return (
       <Wrap orgName={orgName}>
         <div className="text-center">
-          <div className="text-6xl mb-4">✓</div>
-          <h1 className="text-2xl font-bold mb-2">Listo</h1>
-          <p className="text-zinc-400">
-            Quedaste autorizado. Mostrá tu DNI en la entrada del barrio.
+          <div className="text-4xl mb-2">✓</div>
+          <h1 className="text-2xl font-bold mb-1">Listo</h1>
+          <p className="text-zinc-400 text-sm mb-5">
+            Mostrale este código al guardia en la entrada.
+          </p>
+
+          {qrSvg && (
+            <div className="bg-white rounded-2xl p-4 inline-block mb-4 shadow-2xl">
+              <div
+                className="w-[260px] h-[260px] mx-auto"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+            </div>
+          )}
+
+          {auth.visitor_name && (
+            <p className="text-lg font-semibold">{auth.visitor_name}</p>
+          )}
+          {dniForQr && (
+            <p className="text-sm text-zinc-400 tabular-nums">
+              DNI {formatDni(dniForQr)}
+            </p>
+          )}
+          {host && (
+            <p className="text-xs text-zinc-500 mt-3">
+              Invitación de {host.first_name} {host.last_name}
+            </p>
+          )}
+          <p className="text-xs text-zinc-600 mt-4">
+            💡 Sacá una captura por si perdés conexión cuando llegues.
           </p>
         </div>
       </Wrap>
