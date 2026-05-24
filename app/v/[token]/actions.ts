@@ -40,13 +40,16 @@ export async function claimInviteAction(formData: FormData) {
   if (auth.claimed_at) redirect(`/v/${token}?done=1`);
   if (new Date(auth.valid_until) < new Date()) fail(token, "La invitación ya venció");
 
+  // Marcamos el claim sin borrar el invite_token. La protección de "un solo
+  // uso" la da `claimed_at`: la action chequea arriba `if (auth.claimed_at)
+  // redirect(done=1)` y bloquea cualquier re-claim. Mantener el token
+  // permite que el visitante recargue la pantalla "Listo" sin tirar 404.
   const { error } = await admin
     .from("authorizations")
     .update({
       dni,
       visitor_name: name,
       claimed_at: new Date().toISOString(),
-      invite_token: null, // un solo uso
     })
     .eq("id", auth.id);
 
