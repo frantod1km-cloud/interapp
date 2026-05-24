@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/org";
 import { KIND_META, formatArs, type ListingKind } from "@/lib/marketplace";
+import { expireOldPendingReservations } from "./actions";
+import CancelReservationButton from "./CancelReservationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,11 @@ export default async function ResidentMarketplacePage() {
     .eq("user_id", user!.id)
     .maybeSingle();
 
+  // Antes de listar, auto-cancelamos las pending_payment del residente que
+  // pasaron del TTL (30 min). Así no quedan reservas zombies en pantalla y
+  // se libera el cupo de los eventos para los demás.
+  if (me) await expireOldPendingReservations(me.id);
+
   const { data: myReservations } = me
     ? await supabase
         .from("reservations")
@@ -34,7 +41,7 @@ export default async function ResidentMarketplacePage() {
         .in("status", ["pending_payment", "confirmed"])
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
-        .limit(5)
+        .limit(10)
     : { data: null };
 
   return (
@@ -77,15 +84,20 @@ export default async function ResidentMarketplacePage() {
                       })}
                     </div>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      r.status === "confirmed"
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-amber-500/20 text-amber-300"
-                    }`}
-                  >
-                    {r.status === "confirmed" ? "Confirmada" : "Esperando pago"}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        r.status === "confirmed"
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-amber-500/20 text-amber-300"
+                      }`}
+                    >
+                      {r.status === "confirmed" ? "Confirmada" : "Esperando pago"}
+                    </span>
+                    {r.status === "pending_payment" && (
+                      <CancelReservationButton reservationId={r.id} />
+                    )}
+                  </div>
                 </div>
               );
             })}
