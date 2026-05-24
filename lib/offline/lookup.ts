@@ -1,4 +1,4 @@
-import type { LookupResult } from "@/lib/access/lookup";
+import type { LookupContext, LookupResult } from "@/lib/access/lookup";
 import { describeRule, isWithinAccessWindow } from "@/lib/access/rules";
 import { dniSearchForms } from "@/lib/dni/parse";
 import type { Snapshot } from "./db";
@@ -11,6 +11,26 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
   // para que el snapshot funcione aunque el padrón viejo tenga inconsistencias.
   const forms = new Set(dniSearchForms(dni));
   const resident = snap.residents.find((r) => forms.has(r.dni));
+
+  // Todas las autorizaciones vigentes del DNI (ordenadas por vencimiento).
+  const nowMs = Date.now();
+  const activeAuths = snap.authorizations
+    .filter((a) => forms.has(a.dni) && new Date(a.valid_until).getTime() >= nowMs)
+    .sort((a, b) => (a.valid_until < b.valid_until ? 1 : -1));
+
+  const authToContext = (a: typeof activeAuths[number]): LookupContext => ({
+    kind: "authorization",
+    label: `Invitado de ${a.resident_name ?? "Residente"}`,
+    detail: `Vence ${new Date(a.valid_until).toLocaleString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`,
+    authorizationId: a.id,
+    residentId: a.resident_id,
+    validUntil: a.valid_until,
+  });
   if (resident) {
     const fullName = `${resident.first_name} ${resident.last_name}`;
 
@@ -23,6 +43,7 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
         detail: `Acceso vencido el ${new Date(resident.access_expires_at).toLocaleDateString("es-AR")}`,
         residentId: resident.id,
         residentKind: resident.kind,
+        otherContexts: activeAuths.map(authToContext),
       };
     }
 
@@ -55,6 +76,7 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
         residentId: resident.id,
         residentKind: resident.kind,
         vehicles,
+        otherContexts: activeAuths.map(authToContext),
       };
     }
 
@@ -67,12 +89,11 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
       residentId: resident.id,
       vehicles,
       residentKind: resident.kind,
+      otherContexts: activeAuths.map(authToContext),
     };
   }
 
-  const now = Date.now();
-  const matching = snap.authorizations.filter((a) => forms.has(a.dni));
-  const valid = matching.find((a) => new Date(a.valid_until).getTime() >= now);
+  const valid = activeAuths[0];
   if (valid) {
     return {
       state: "authorized",
@@ -82,10 +103,15 @@ export function lookupDniOffline(snap: Snapshot, dni: string): LookupResult {
       detail: `Invitado de ${valid.resident_name ?? "Residente"}`,
       residentId: valid.resident_id,
       authorizationId: valid.id,
+      otherContexts: activeAuths.slice(1).map(authToContext),
     };
   }
 
-  const expired = matching.sort((a, b) =>
+  // Para detectar "expired" buscamos cualquier autorización del DNI
+  // (vigente o no) y tomamos la más reciente; si la única que aparece está
+  // vencida cae en este branch.
+  const allMatching = snap.authorizations.filter((a) => forms.has(a.dni));
+  const expired = allMatching.sort((a, b) =>
     a.valid_until < b.valid_until ? 1 : -1,
   )[0];
   if (expired) {

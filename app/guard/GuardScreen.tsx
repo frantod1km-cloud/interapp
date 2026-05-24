@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDni, looksLikeScannerInput, parseDni } from "@/lib/dni/parse";
-import type { LookupResult } from "@/lib/access/lookup";
+import type { LookupContext, LookupResult } from "@/lib/access/lookup";
 import { kindMeta } from "@/lib/resident-kinds";
 import {
   enqueue,
@@ -916,6 +916,8 @@ function ResultView({
           direction={direction}
         />
 
+        <OtherContextsPanel contexts={result.otherContexts ?? []} />
+
         {result.pendingPackages && result.pendingPackages > 0 ? (
           <div className="bg-sky-600 rounded-xl px-4 py-3 mb-3 inline-flex items-center gap-3 text-left text-white font-bold">
             <span className="text-2xl">📦</span>
@@ -1111,6 +1113,8 @@ function ResultView({
           suggestedUnitLabel={null}
           direction={direction}
         />
+
+        <OtherContextsPanel contexts={result.otherContexts ?? []} />
       </div>
 
       {/* Para visitantes desconocidos o sin nombre: input editable + nota + acompañantes */}
@@ -1609,6 +1613,44 @@ function DestinationPicker({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Panel "Aparece también como": chips de los demás roles/invitaciones que
+// tiene la misma persona en el barrio. Útil cuando alguien es a la vez
+// empleado y visitante invitado, o tiene dos invitaciones simultáneas de
+// residentes distintos. El guardia los ve y decide.
+function OtherContextsPanel({ contexts }: { contexts: LookupContext[] }) {
+  if (!contexts || contexts.length === 0) return null;
+  return (
+    <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
+      <div className="text-xs uppercase tracking-wider opacity-80 mb-2">
+        🧩 Aparece también como
+      </div>
+      <div className="space-y-1.5">
+        {contexts.map((c, i) => (
+          <div
+            key={c.authorizationId ?? c.residentId ?? i}
+            className="bg-zinc-950/50 rounded px-3 py-2 text-sm flex items-start gap-2"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold truncate">{c.label}</div>
+              <div className="text-xs opacity-70 truncate">{c.detail}</div>
+              {c.validUntil && (
+                <div className="text-[10px] opacity-50 mt-0.5">
+                  vence {new Date(c.validUntil).toLocaleString("es-AR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

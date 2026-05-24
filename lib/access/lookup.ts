@@ -3,6 +3,20 @@ import { dniSearchForms } from "@/lib/dni/parse";
 import { getUnitBreadcrumb } from "@/lib/units";
 import { describeRule, isWithinAccessWindow, type AccessRule } from "./rules";
 
+// Para los chips de "Aparece también como": label corto y humano del kind.
+function residentKindLabel(kind: string | null | undefined): string {
+  switch (kind) {
+    case "owner": return "🏠 Propietario";
+    case "tenant": return "🔑 Inquilino";
+    case "family": return "👨‍👩‍👧 Familiar";
+    case "staff": return "🛠️ Empleado del barrio";
+    case "domestic": return "🧹 Doméstica";
+    case "contractor": return "🔧 Contratista";
+    case "other": return "👤 Otro";
+    default: return "👤 Residente";
+  }
+}
+
 export type VehicleHint = {
   plate: string;
   make?: string | null;
@@ -25,6 +39,21 @@ export type LastEventHint = {
   result: string;
 };
 
+// Contexto adicional en el que aparece el mismo DNI. Sirve para mostrar al
+// guardia "esta persona también es empleado del barrio" o "tiene otra
+// invitación viva de otro residente". Cada contexto es una etiqueta extra
+// que el guardia puede tener en cuenta antes de elegir cómo registrar el
+// ingreso.
+export type LookupContext = {
+  kind: "resident" | "authorization";
+  label: string;       // ej. "Empleado del barrio (Jardinero)"
+  detail: string;      // ej. "Sector Norte · Etapa 1 · Club House"
+  residentKind?: string;       // owner / staff / domestic / contractor / etc.
+  authorizationId?: string;
+  residentId?: string;
+  validUntil?: string;         // ISO, solo para authorizations
+};
+
 export type LookupResult =
   | {
       state: "authorized";
@@ -41,6 +70,7 @@ export type LookupResult =
       lastEvent?: LastEventHint | null; // último ingreso/egreso registrado
       unitId?: string | null;   // id de la unidad del residente (si tiene)
       unitLabel?: string | null;// label de esa unidad para display rápido
+      otherContexts?: LookupContext[]; // otras apariciones del mismo DNI
     }
   | {
       state: "expired";
@@ -48,6 +78,7 @@ export type LookupResult =
       fullName?: string;
       detail: string; // ej: "Autorización venció a las 18:00"
       authorizationId: string;
+      otherContexts?: LookupContext[];
     }
   | {
       state: "out_of_window";
@@ -57,6 +88,7 @@ export type LookupResult =
       residentId: string;
       residentKind: string;
       vehicles?: VehicleHint[];
+      otherContexts?: LookupContext[];
     }
   | {
       state: "access_expired";
@@ -65,11 +97,13 @@ export type LookupResult =
       detail: string; // "Acceso vencido el 30/06/2026"
       residentId: string;
       residentKind: string;
+      otherContexts?: LookupContext[];
     }
   | {
       state: "unknown";
       dni: string;
       detail: string; // "DNI no figura en el padrón"
+      otherContexts?: LookupContext[];
     };
 
 // Resuelve qué estado mostrar al guardia para un DNI dado dentro de una org.
@@ -101,11 +135,63 @@ export async function lookupDni(
     .limit(1);
   const resident = residents?.[0] ?? null;
 
+  // En paralelo: TODAS las autorizaciones vigentes del DNI (puede tener
+  // varias activas: dos residentes lo invitaron el mismo día). Las usamos
+  // tanto para elegir la "primaria" (si no es residente) como para armar
+  // los otherContexts.
+  const nowIso = new Date().toISOString();
+  const { data: allActiveAuths } = await supabase
+    .from("authorizations")
+    .select("id, visitor_name, valid_until, resident_id, residents(first_name, last_name, unit, unit_id)")
+    .eq("organization_id", organizationId)
+    .in("dni", dniForms)
+    .eq("revoked", false)
+    .gte("valid_until", nowIso)
+    .order("valid_until", { ascending: false });
+
+  // Helper: arma un LookupContext a partir de una autorización
+  const authToContext = async (a: {
+    id: string;
+    resident_id: string | null;
+    valid_until: string;
+    residents: unknown;
+  }): Promise<LookupContext> => {
+    const r = Array.isArray(a.residents) ? a.residents[0] : a.residents;
+    const rr = r as { first_name?: string; last_name?: string; unit?: string | null; unit_id?: string | null } | null;
+    const host = rr ? `${rr.first_name ?? ""} ${rr.last_name ?? ""}`.trim() : "Residente";
+    const breadcrumb = rr?.unit_id ? await getUnitBreadcrumb(rr.unit_id) : null;
+    const place = breadcrumb ?? rr?.unit ?? null;
+    return {
+      kind: "authorization",
+      label: `Invitado de ${host}`,
+      detail: place ? place : `Vence ${new Date(a.valid_until).toLocaleString("es-AR")}`,
+      authorizationId: a.id,
+      residentId: a.resident_id ?? undefined,
+      validUntil: a.valid_until,
+    };
+  };
+
+  // Helper: arma un LookupContext desde el residente principal (sirve para
+  // mostrar "también figura como residente" cuando lo primario es una auth).
+  const residentToContext = async (r: typeof resident): Promise<LookupContext | null> => {
+    if (!r) return null;
+    const breadcrumb = r.unit_id ? await getUnitBreadcrumb(r.unit_id) : null;
+    const place = breadcrumb ?? r.unit ?? null;
+    return {
+      kind: "resident",
+      label: residentKindLabel(r.kind),
+      detail: place ? place : "Acceso permanente",
+      residentId: r.id,
+      residentKind: r.kind,
+    };
+  };
+
   if (resident) {
     const fullName = `${resident.first_name} ${resident.last_name}`;
 
     // Expiración tiene prioridad sobre cualquier otra regla
     if (resident.access_expires_at && new Date(resident.access_expires_at) < new Date()) {
+      const otherCtx = await Promise.all((allActiveAuths ?? []).map(authToContext));
       return {
         state: "access_expired",
         dni,
@@ -113,6 +199,7 @@ export async function lookupDni(
         detail: `Acceso vencido el ${new Date(resident.access_expires_at).toLocaleDateString("es-AR")}`,
         residentId: resident.id,
         residentKind: resident.kind,
+        otherContexts: otherCtx,
       };
     }
     // Si la persona tiene una regla individual habilitada, esa manda.
@@ -210,6 +297,11 @@ export async function lookupDni(
         }
       : (categoryRule as AccessRule | null);
 
+    // Cuando lo primario es "residente", los otros contextos son TODAS las
+    // autorizaciones activas (que vienen de otros residentes y son
+    // independientes de esta condición de empleado/propietario).
+    const otherContextsResident = await Promise.all((allActiveAuths ?? []).map(authToContext));
+
     if (effectiveRule && !isWithinAccessWindow(effectiveRule)) {
       return {
         state: "out_of_window",
@@ -219,6 +311,7 @@ export async function lookupDni(
         residentId: resident.id,
         residentKind: resident.kind,
         vehicles: vehicles ?? [],
+        otherContexts: otherContextsResident,
       };
     }
 
@@ -242,22 +335,13 @@ export async function lookupDni(
       lastEvent,
       unitId: resident.unit_id ?? null,
       unitLabel: breadcrumb ?? resident.unit ?? null,
+      otherContexts: otherContextsResident,
     };
   }
 
-  // 2. ¿Tiene autorización vigente?
-  const nowIso = new Date().toISOString();
-  const { data: auths } = await supabase
-    .from("authorizations")
-    .select("id, visitor_name, valid_until, revoked, resident_id, residents(first_name, last_name, unit, unit_id)")
-    .eq("organization_id", organizationId)
-    .in("dni", dniForms)
-    .eq("revoked", false)
-    .gte("valid_until", nowIso)
-    .order("valid_until", { ascending: false })
-    .limit(1);
-
-  const valid = auths?.[0];
+  // 2. ¿Tiene autorización vigente? (reusamos allActiveAuths para no
+  // duplicar query)
+  const valid = allActiveAuths?.[0];
   if (valid) {
     const r = Array.isArray(valid.residents) ? valid.residents[0] : valid.residents;
     const host = r ? `${r.first_name} ${r.last_name}` : "Residente";
@@ -278,6 +362,11 @@ export async function lookupDni(
     const hostBreadcrumb = hostUnitId ? await getUnitBreadcrumb(hostUnitId) : null;
     const hostDetail = hostBreadcrumb ?? hostUnitLabel ?? null;
 
+    // Otros contextos: las DEMÁS autorizaciones vigentes (otras invitaciones
+    // simultáneas de otros residentes).
+    const others = allActiveAuths!.slice(1);
+    const otherContexts = await Promise.all(others.map(authToContext));
+
     return {
       state: "authorized",
       kind: "authorization",
@@ -291,6 +380,7 @@ export async function lookupDni(
         : null,
       unitId: hostUnitId,
       unitLabel: hostBreadcrumb ?? hostUnitLabel,
+      otherContexts,
     };
   }
 
