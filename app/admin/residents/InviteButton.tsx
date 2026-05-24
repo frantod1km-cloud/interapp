@@ -53,7 +53,7 @@ export default function InviteButton({
               type="text"
               placeholder="Contraseña (mín. 8)"
               required
-              minLength={8}
+              minLength={10}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
             />
             <div className="flex gap-2 pt-2">

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { validatePassword } from "@/lib/password";
 
 async function currentResident(): Promise<{ orgId: string; residentId: string; userId: string }> {
   const org = await getCurrentOrg();
@@ -53,7 +54,8 @@ export async function changePasswordAction(formData: FormData): Promise<void> {
   const newPassword = String(formData.get("new_password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
-  if (newPassword.length < 8) fail("/resident/profile/password", "La contraseña debe tener al menos 8 caracteres");
+  const pwCheck = validatePassword(newPassword);
+  if (!pwCheck.ok) fail("/resident/profile/password", pwCheck.reason);
   if (newPassword !== confirm) fail("/resident/profile/password", "Las contraseñas no coinciden");
 
   const supabase = await createClient();

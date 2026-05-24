@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { logAudit } from "@/lib/audit";
 import { normalizeDni } from "@/lib/dni/parse";
+import { validatePassword } from "@/lib/password";
 
 async function requireOrgAdmin(): Promise<{ orgId: string; userId: string }> {
   const org = await getCurrentOrg();
@@ -91,7 +92,8 @@ export async function inviteResidentAction(formData: FormData) {
 
   if (!residentId) fail("Residente no encontrado");
   if (!email) fail("Email obligatorio");
-  if (password.length < 8) fail("La contraseña tiene que tener al menos 8 caracteres");
+  const pwCheck = validatePassword(password);
+  if (!pwCheck.ok) fail(pwCheck.reason);
 
   const admin = createAdminClient();
 

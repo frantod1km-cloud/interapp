@@ -36,7 +36,7 @@ export default async function ChangePasswordPage({
             type="password"
             name="new_password"
             required
-            minLength={8}
+            minLength={10}
             autoFocus
             autoComplete="new-password"
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
@@ -49,7 +49,7 @@ export default async function ChangePasswordPage({
             type="password"
             name="confirm"
             required
-            minLength={8}
+            minLength={10}
             autoComplete="new-password"
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
           />

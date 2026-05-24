@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPreapproval } from "@/lib/mp";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
+import { validatePassword } from "@/lib/password";
 
 const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 const RESERVED_SLUGS = new Set([
@@ -63,7 +64,8 @@ export async function createOrgAction(formData: FormData) {
   if (!SLUG_RE.test(slug) || RESERVED_SLUGS.has(slug)) {
     fail(planId, "Subdominio inválido (3-40 caracteres, solo letras, números y guion; algunos están reservados).");
   }
-  if (password.length < 8) fail(planId, "La contraseña tiene que tener al menos 8 caracteres.");
+  const pwCheck = validatePassword(password);
+  if (!pwCheck.ok) fail(planId, pwCheck.reason);
 
   const admin = createAdminClient();
 

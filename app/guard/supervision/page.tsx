@@ -150,7 +150,7 @@ export default async function SupervisionPage({
           <form action={createGuardAction} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <input name="full_name" placeholder="Nombre y apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
             <input name="email" type="email" placeholder="Email" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-            <input name="password" type="text" placeholder="Contraseña (mín. 8)" required minLength={8} className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
+            <input name="password" type="text" placeholder="Contraseña (mín. 10)" required minLength={10} className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
             <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
               Crear
             </button>

@@ -88,7 +88,7 @@ export default async function GuardsPage({
           type="text"
           placeholder="Contraseña (mín. 8)"
           required
-          minLength={8}
+          minLength={10}
           className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
         />
         <button

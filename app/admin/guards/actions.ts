@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
 import { logAudit } from "@/lib/audit";
+import { validatePassword } from "@/lib/password";
 
 // Si la acción fue disparada desde /guard/supervision (lo detectamos por
 // referer), volvemos ahí. Si vino del panel admin, volvemos a /admin/guards.
@@ -49,7 +50,8 @@ export async function createGuardAction(formData: FormData) {
     roleRaw === "guard_lead" && !isLead ? "guard_lead" : "guard";
 
   if (!fullName || !email) await fail("Faltan nombre o email");
-  if (password.length < 8) await fail("La contraseña tiene que tener al menos 8 caracteres");
+  const pwCheck = validatePassword(password);
+  if (!pwCheck.ok) await fail(pwCheck.reason);
 
   const admin = createAdminClient();
 

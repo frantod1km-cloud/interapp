@@ -41,7 +41,7 @@ export default async function CreateOrgPage({
 
           <div className="border-t border-zinc-800 pt-4 space-y-4">
             <Field label="Tu email" name="email" type="email" required />
-            <Field label="Tu contraseña" name="password" type="password" required minLength={8} />
+            <Field label="Tu contraseña" name="password" type="password" required minLength={10} />
             <Field label="Tu nombre completo" name="full_name" required />
           </div>
 
