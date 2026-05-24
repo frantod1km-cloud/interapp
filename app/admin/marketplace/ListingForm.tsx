@@ -92,7 +92,7 @@ export default function ListingForm({
             name="price_ars"
             type="number"
             min={0}
-            step={100}
+            step={1}
             required
             defaultValue={existing?.price_ars ?? 0}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3"
