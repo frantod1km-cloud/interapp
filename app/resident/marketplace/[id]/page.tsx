@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { KIND_META, formatArs, type ListingKind } from "@/lib/marketplace";
 import ReserveForm from "./ReserveForm";
@@ -37,8 +38,12 @@ export default async function ResidentListingDetailPage({
     .eq("user_id", user!.id)
     .maybeSingle();
 
-  // ¿Pagos configurados en el barrio?
-  const { data: paymentSettings } = await supabase
+  // ¿Pagos configurados en el barrio? Usamos admin client porque la RLS
+  // de org_payment_settings solo expone la fila al org_admin (el token es
+  // secreto). El residente igual necesita saber si está activo para que
+  // el botón de reservar aparezca.
+  const adminClient = createAdminClient();
+  const { data: paymentSettings } = await adminClient
     .from("org_payment_settings")
     .select("active")
     .eq("organization_id", org.id)
