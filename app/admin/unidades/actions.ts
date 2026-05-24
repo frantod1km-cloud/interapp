@@ -101,6 +101,7 @@ export async function addUnitAction(formData: FormData) {
   const label = String(formData.get("label") ?? "").trim();
   const parentId = String(formData.get("parent_id") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
+  const customKind = String(formData.get("custom_kind") ?? "").trim();
 
   if (!label) fail("La etiqueta es obligatoria");
 
@@ -121,7 +122,7 @@ export async function addUnitAction(formData: FormData) {
   }
   if (level > levels.length) fail(`Llegaste al nivel más profundo (${levels[levels.length - 1]})`);
 
-  const kind = levels[level - 1];
+  const kind = customKind || levels[level - 1];
 
   const { error } = await admin.from("units").insert({
     organization_id: orgId,
@@ -141,18 +142,77 @@ export async function addUnitAction(formData: FormData) {
 }
 
 // ---------------------------------------------------------------------------
-// Alta MASIVA dentro de un padre (ej. "creá los Lote 1 a 30 dentro de
-// Etapa 2 / Sector Norte")
+// Alta MASIVA dentro de un padre. Soporta tres modos:
+//   - "numeric" : rango numérico ("Lote 1" a "Lote 200")
+//   - "letters" : rango alfabético ("A", "B", ..., "Z", "AA", "AB"...)
+//   - "list"    : lista libre tipeada por el admin ("PB, B1, B2, EP, 1, 2, 3")
+// El kind por defecto es el nombre del nivel correspondiente al padre, pero
+// el admin puede pasar `custom_kind` para overridearlo (ej. para una rama
+// "Estacionamiento" o "Pileta" que no encaja en el nombre del nivel).
 // ---------------------------------------------------------------------------
+function lettersInRange(from: string, to: string): string[] {
+  // Convierte "A"→1, "B"→2, ..., "Z"→26, "AA"→27, etc.
+  const toNum = (s: string) =>
+    s.toUpperCase().split("").reduce((n, c) => n * 26 + (c.charCodeAt(0) - 64), 0);
+  const toStr = (n: number) => {
+    let out = "";
+    while (n > 0) {
+      const r = (n - 1) % 26;
+      out = String.fromCharCode(65 + r) + out;
+      n = Math.floor((n - 1) / 26);
+    }
+    return out;
+  };
+  const a = toNum(from);
+  const b = toNum(to);
+  if (a < 1 || b < a) return [];
+  const arr: string[] = [];
+  for (let i = a; i <= b; i++) arr.push(toStr(i));
+  return arr;
+}
+
+function parseFreeList(raw: string): string[] {
+  return raw
+    .split(/[\n,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export async function bulkCreateUnitsAction(formData: FormData) {
   const { orgId } = await requireOrgAdmin();
   const parentId = String(formData.get("parent_id") ?? "").trim() || null;
+  const mode = String(formData.get("mode") ?? "numeric");
   const prefix = String(formData.get("prefix") ?? "").trim();
-  const from = parseInt(String(formData.get("from") ?? "1"));
-  const to = parseInt(String(formData.get("to") ?? "1"));
+  const customKind = String(formData.get("custom_kind") ?? "").trim();
 
-  if (isNaN(from) || isNaN(to) || from < 0 || to < from) fail("Rango inválido");
-  if (to - from + 1 > 1000) fail("Máximo 1000 unidades por alta masiva");
+  // Calcular el array de labels según el modo
+  let labels: string[] = [];
+  if (mode === "numeric") {
+    const from = parseInt(String(formData.get("from") ?? "1"));
+    const to = parseInt(String(formData.get("to") ?? "1"));
+    if (isNaN(from) || isNaN(to) || from < 0 || to < from) fail("Rango numérico inválido");
+    if (to - from + 1 > 1000) fail("Máximo 1000 unidades por alta masiva");
+    for (let i = from; i <= to; i++) {
+      labels.push(prefix ? `${prefix} ${i}` : String(i));
+    }
+  } else if (mode === "letters") {
+    const fromL = String(formData.get("from_letter") ?? "A").trim();
+    const toL = String(formData.get("to_letter") ?? "Z").trim();
+    if (!/^[A-Za-z]+$/.test(fromL) || !/^[A-Za-z]+$/.test(toL))
+      fail("Las letras tienen que ser solo A-Z");
+    const arr = lettersInRange(fromL, toL);
+    if (arr.length === 0) fail("Rango alfabético inválido (¿el desde es mayor que el hasta?)");
+    if (arr.length > 1000) fail("Máximo 1000 unidades por alta masiva");
+    labels = arr.map((l) => (prefix ? `${prefix} ${l}` : l));
+  } else if (mode === "list") {
+    const raw = String(formData.get("free_list") ?? "");
+    const items = parseFreeList(raw);
+    if (items.length === 0) fail("La lista está vacía");
+    if (items.length > 1000) fail("Máximo 1000 unidades por alta masiva");
+    labels = items.map((l) => (prefix ? `${prefix} ${l}` : l));
+  } else {
+    fail("Modo inválido");
+  }
 
   const levels = await getOrgUnitLevels(orgId);
   if (levels.length === 0) fail("Primero configurá los niveles", "/admin/setup/unidades");
@@ -171,26 +231,18 @@ export async function bulkCreateUnitsAction(formData: FormData) {
   }
   if (level > levels.length) fail(`Llegaste al nivel más profundo (${levels[levels.length - 1]})`);
 
-  const kind = levels[level - 1];
-  // Si no pasaron prefijo, usamos solo el número como label (ej "1", "2"...)
-  // Si pasaron prefijo, lo concatenamos: "Lote 1", "Lote 2"...
-  const rows: Array<{
-    organization_id: string;
-    label: string;
-    kind: string;
-    level: number;
-    parent_id: string | null;
-  }> = [];
-  for (let i = from; i <= to; i++) {
-    const label = prefix ? `${prefix} ${i}` : String(i);
-    rows.push({ organization_id: orgId, label, kind, level, parent_id: parentId });
-  }
+  const kind = customKind || levels[level - 1];
 
-  // Usamos insert + onConflict do nothing manual via try/catch por fila
-  // sería caro. Mejor: insert con ignoreDuplicates en el unique index nuevo.
-  // El unique index es (organization_id, coalesce(parent_id, '_root_'), label).
-  // Supabase no tiene onConflict para expression indexes, así que tenemos
-  // que filtrar duplicados antes.
+  const rows = labels.map((label) => ({
+    organization_id: orgId,
+    label,
+    kind,
+    level,
+    parent_id: parentId,
+  }));
+
+  // Filtramos los que ya existen en el mismo padre + nivel para no chocar
+  // con el unique index (organization_id, parent_id, label).
   const { data: existing } = await admin
     .from("units")
     .select("label")
@@ -209,6 +261,65 @@ export async function bulkCreateUnitsAction(formData: FormData) {
 
   revalidatePath("/admin/unidades");
   redirect(`/admin/unidades?saved=1&created=${toInsert.length}`);
+}
+
+// ---------------------------------------------------------------------------
+// Alta de UN ESPACIO ESPECIAL (Club House, Pileta, Estacionamiento, etc.)
+// ---------------------------------------------------------------------------
+// Lo mismo que addUnitAction pero con `kind` libre (no se infiere del nivel
+// configurado del barrio). Útil para amenidades que no encajan en la jerarquía
+// estándar de "Sector / Etapa / Lote".
+//
+// Puede ir en cualquier nivel: raíz (amenidad compartida del barrio entero)
+// o adentro de algún nodo (pileta de Sector Norte).
+export async function addSpecialUnitAction(formData: FormData) {
+  const { orgId } = await requireOrgAdmin();
+  const label = String(formData.get("label") ?? "").trim();
+  const customKind = String(formData.get("custom_kind") ?? "").trim();
+  const parentId = String(formData.get("parent_id") ?? "").trim() || null;
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+
+  if (!label) fail("La etiqueta es obligatoria");
+  if (!customKind) fail("El tipo de espacio es obligatorio (ej: Club House, Pileta)");
+
+  const levels = await getOrgUnitLevels(orgId);
+  if (levels.length === 0) fail("Primero configurá los niveles", "/admin/setup/unidades");
+
+  const admin = createAdminClient();
+  let level = 1;
+  if (parentId) {
+    const { data: parent } = await admin
+      .from("units")
+      .select("level")
+      .eq("id", parentId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+    if (!parent) fail("Padre no encontrado");
+    level = parent.level + 1;
+  }
+  // No bloqueamos por levels.length: un espacio especial puede ir al final
+  // de la jerarquía aunque sea más profundo que los niveles configurados,
+  // pero por simplicidad sí lo respetamos. Si quisieran más profundidad,
+  // tienen que agregar un nivel en el setup.
+  if (level > levels.length) {
+    fail(`Llegaste al nivel más profundo (${levels[levels.length - 1]}). Agregá un nivel en setup si necesitás más profundidad.`);
+  }
+
+  const { error } = await admin.from("units").insert({
+    organization_id: orgId,
+    label,
+    kind: customKind,
+    level,
+    parent_id: parentId,
+    notes,
+  });
+  if (error) {
+    if (error.code === "23505") fail(`Ya existe "${label}" como hermano de este nodo.`);
+    fail(error.message);
+  }
+
+  revalidatePath("/admin/unidades");
+  redirect("/admin/unidades?saved=1");
 }
 
 // ---------------------------------------------------------------------------
