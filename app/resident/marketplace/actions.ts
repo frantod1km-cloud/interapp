@@ -8,7 +8,9 @@ import { getCurrentOrg } from "@/lib/org";
 // Cuántos minutos consideramos viva a una reserva pending_payment antes de
 // auto-cancelarla. Coincide con `expiresMinutes` que mandamos a Mercado Pago
 // al crear el preference — pasado ese tiempo el link de pago también muere.
-export const PENDING_TTL_MINUTES = 30;
+//
+// (No se exporta porque en "use server" solo se pueden exportar async fns.)
+const PENDING_TTL_MINUTES = 30;
 
 async function currentResidentId(): Promise<{ orgId: string; residentId: string }> {
   const org = await getCurrentOrg();
