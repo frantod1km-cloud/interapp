@@ -15,6 +15,8 @@ export type AuditAction =
   | "org.suspend"
   | "org.reactivate"
   | "resident.create"
+  | "resident.update"
+  | "resident.delete"
   | "resident.invite"
   | "resident.deactivate"
   | "resident.reactivate"

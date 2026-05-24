@@ -7,6 +7,8 @@ import { addResidentAction, toggleResidentActiveAction } from "./actions";
 import InviteButton from "./InviteButton";
 import KindSelector from "./KindSelector";
 import UnitPicker from "./UnitPicker";
+import EditResidentButton from "./EditResidentButton";
+import RemoveResidentButton from "./RemoveResidentButton";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export default async function ResidentsPage({
 
   let query = admin
     .from("residents")
-    .select("id, dni, first_name, last_name, unit, phone, active, user_id, kind, created_at, authorized_by_resident_id")
+    .select("id, dni, first_name, last_name, unit, unit_id, phone, active, user_id, kind, created_at, authorized_by_resident_id")
     .eq("organization_id", org.id)
     .order("last_name");
 
@@ -217,10 +219,23 @@ export default async function ResidentsPage({
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-2 justify-end flex-wrap">
                       {!email && (
                         <InviteButton residentId={r.id} fullName={`${r.first_name} ${r.last_name}`} />
                       )}
+                      <EditResidentButton
+                        resident={{
+                          id: r.id,
+                          dni: r.dni,
+                          first_name: r.first_name,
+                          last_name: r.last_name,
+                          unit: r.unit,
+                          unit_id: r.unit_id,
+                          phone: r.phone,
+                          kind: r.kind,
+                        }}
+                        units={units ?? []}
+                      />
                       <form action={toggleResidentActiveAction}>
                         <input type="hidden" name="resident_id" value={r.id} />
                         <input type="hidden" name="active" value={r.active ? "false" : "true"} />
@@ -228,6 +243,10 @@ export default async function ResidentsPage({
                           {r.active ? "Desactivar" : "Reactivar"}
                         </button>
                       </form>
+                      <RemoveResidentButton
+                        residentId={r.id}
+                        fullName={`${r.first_name} ${r.last_name}`}
+                      />
                     </div>
                   </td>
                 </tr>
