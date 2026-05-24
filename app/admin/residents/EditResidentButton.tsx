@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { RESIDENT_KINDS } from "@/lib/resident-kinds";
+import type { LeafUnit } from "@/lib/units";
 import { editResidentAction } from "./actions";
 import UnitPicker from "./UnitPicker";
-
-type Unit = { id: string; label: string; kind: string };
 
 export type ResidentForEdit = {
   id: string;
@@ -23,10 +22,10 @@ export type ResidentForEdit = {
 // guardar — sirve para arreglar registros viejos con datos rotos).
 export default function EditResidentButton({
   resident,
-  units,
+  leaves,
 }: {
   resident: ResidentForEdit;
-  units: Unit[];
+  leaves: LeafUnit[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -126,7 +125,7 @@ export default function EditResidentButton({
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Unidad</label>
                 <UnitPicker
-                  units={units}
+                  leaves={leaves}
                   defaultUnitId={resident.unit_id}
                   defaultUnitLabel={resident.unit}
                 />

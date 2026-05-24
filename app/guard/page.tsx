@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentMemberRole, getCurrentOrg } from "@/lib/org";
+import { getUnitLeaves } from "@/lib/units";
 import GuardScreen from "./GuardScreen";
 
 export const dynamic = "force-dynamic";
@@ -32,26 +33,27 @@ export default async function GuardPage() {
   }
 
   const supabase = await createClient();
-  const [{ data: gates }, { data: units }] = await Promise.all([
+  const [{ data: gates }, leaves] = await Promise.all([
     supabase
       .from("gates")
       .select("id, name")
       .eq("organization_id", org.id)
       .eq("active", true)
       .order("name"),
-    supabase
-      .from("units")
-      .select("id, label")
-      .eq("organization_id", org.id)
-      .eq("active", true)
-      .order("label"),
+    getUnitLeaves(org.id),
   ]);
 
   return (
     <GuardScreen
       orgName={org.name}
       gates={gates ?? []}
-      units={units ?? []}
+      units={leaves.map((l) => ({
+        id: l.id,
+        label: l.label,
+        kind: l.kind,
+        breadcrumb: l.breadcrumb,
+        full_path: l.full_path,
+      }))}
       isLead={role === "guard_lead" || role === "org_admin"}
     />
   );

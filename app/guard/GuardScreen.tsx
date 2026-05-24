@@ -35,7 +35,13 @@ type Gate = { id: string; name: string };
 
 const GATE_LS_KEY = "interapp.guard.gate";
 
-type Unit = { id: string; label: string };
+type Unit = {
+  id: string;
+  label: string;
+  kind: string | null;
+  breadcrumb: string; // ej. "Etapa 2 · Sector Norte"
+  full_path: string;  // ej. "Sector Norte · Etapa 2 · Lote 42"
+};
 
 export default function GuardScreen({
   orgName,
@@ -215,15 +221,13 @@ export default function GuardScreen({
       setCompanionList([]);
       setNotes("");
       setVisitorName("");
-      // Pre-seleccionamos la unidad del residente:
-      //   - Si tiene unit_id (tabla units nueva) → usar ese id
-      //   - Si solo tiene unit text (legacy) → usar como texto libre "FREE:<label>"
-      //   - Si no tiene nada → vacío
-      let defaultUnit = "";
-      if (screen.result.state === "authorized") {
-        if (screen.result.unitId) defaultUnit = screen.result.unitId;
-        else if (screen.result.unitLabel) defaultUnit = `FREE:${screen.result.unitLabel}`;
-      }
+      // Pre-seleccionamos la unidad del residente si tiene unit_id en el árbol.
+      // Si solo tiene texto legacy (sin unit_id) no podemos pre-seleccionar:
+      // el admin debe migrar primero al árbol.
+      const defaultUnit =
+        screen.result.state === "authorized" && screen.result.unitId
+          ? screen.result.unitId
+          : "";
       setDestinationUnitId(defaultUnit);
     } else if (screen.kind !== "result") {
       setSelectedPlate("");
@@ -403,20 +407,16 @@ export default function GuardScreen({
     const eventModel = isOther ? customModel.trim() || null : null;
     const eventColor = isOther ? customColor.trim() || null : null;
 
-    // destinationUnitId puede ser:
-    //   "" → sin asignar
-    //   "FREE:<texto>" → texto libre (sin id)
-    //   "<uuid>" → id de tabla units
+    // destinationUnitId es "" o el UUID de una hoja del árbol.
+    // Guardamos el label completo (con breadcrumb) en destination_unit_label
+    // para que el histórico sobreviva si el árbol cambia.
     let destUnitId: string | null = null;
     let destUnitLabel: string | null = null;
-    if (destinationUnitId.startsWith("FREE:")) {
-      const free = destinationUnitId.slice(5).trim();
-      destUnitLabel = free || null;
-    } else if (destinationUnitId) {
+    if (destinationUnitId) {
       const u = units.find((x) => x.id === destinationUnitId);
       if (u) {
         destUnitId = u.id;
-        destUnitLabel = u.label;
+        destUnitLabel = u.breadcrumb ? `${u.kind ?? ""} ${u.label} · ${u.breadcrumb}`.trim() : `${u.kind ?? ""} ${u.label}`.trim();
       }
     }
 
@@ -1488,116 +1488,126 @@ function VehiclePicker({
   );
 }
 
-// Selector de unidad de destino. Siempre se renderiza:
-//   - Si el barrio tiene unidades cargadas (tabla `units`): dropdown con
-//     ellas + "Otra (escribir)" para texto libre.
-//   - Si no hay unidades cargadas: input de texto libre directo (el guardia
-//     tipea "Lote 159" o lo que sea).
+// Selector de unidad de destino. Combobox que busca contra las hojas del
+// árbol del barrio. Muestra el breadcrumb completo en cada opción para que
+// el guardia desambigüe ("Lote 42 · Etapa 2 · Sector Norte" vs otro
+// "Lote 42" en otro sector).
 //
-// `value` puede ser:
-//   - "" → sin asignar
-//   - "FREE:<texto>" → texto libre (se guarda en destination_unit_label)
-//   - "<uuid>" → id de la tabla units (se guarda id + label)
+// `value` es el UUID de la hoja o "" para sin asignar. NO hay texto libre:
+// la jerarquía es la única fuente de verdad.
 function DestinationPicker({
   units,
   value,
   onChange,
   suggestedUnitId,
-  suggestedUnitLabel,
   direction,
 }: {
   units: Unit[];
   value: string;
   onChange: (s: string) => void;
   suggestedUnitId: string | null;
-  suggestedUnitLabel: string | null;
+  suggestedUnitLabel: string | null; // no se usa pero mantengo la prop por compat
   direction: "in" | "out";
 }) {
+  const [q, setQ] = useState("");
   const label = direction === "in" ? "¿A qué unidad va?" : "¿De qué unidad sale?";
+  const selected = units.find((u) => u.id === value) ?? null;
 
-  // Caso sin unidades cargadas: input de texto libre nada más.
   if (units.length === 0) {
-    const freeText = value.startsWith("FREE:") ? value.slice(5) : "";
     return (
       <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-xs uppercase tracking-wider opacity-80">{label}</span>
-          {suggestedUnitLabel && (
-            <button
-              type="button"
-              onClick={() => onChange(`FREE:${suggestedUnitLabel}`)}
-              className="text-xs opacity-70 hover:opacity-100 underline"
-            >
-              Usar: {suggestedUnitLabel}
-            </button>
-          )}
-        </div>
-        <input
-          type="text"
-          value={freeText}
-          onChange={(e) => onChange(e.target.value ? `FREE:${e.target.value}` : "")}
-          placeholder={suggestedUnitLabel ?? "Ej: Lote 42, Depto 3B, Local 7"}
-          className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
-        />
-        <p className="text-[10px] opacity-60 mt-1">
-          💡 Cargá tus unidades en <span className="underline">/admin/unidades</span> para tener un listado fijo.
+        <div className="text-xs uppercase tracking-wider opacity-80 mb-2">{label}</div>
+        <p className="text-xs opacity-70">
+          ⚠️ El barrio no tiene unidades cargadas. Pediles a los admins que carguen el
+          árbol en <span className="font-mono">/admin/unidades</span>.
         </p>
       </div>
     );
   }
 
-  // Si la unidad sugerida no está en la lista (residente con unit_id viejo
-  // o la unidad se desactivó), la agregamos arriba para que se pueda elegir.
-  const allOptions = (() => {
-    if (
-      suggestedUnitId &&
-      suggestedUnitLabel &&
-      !units.some((u) => u.id === suggestedUnitId)
-    ) {
-      return [{ id: suggestedUnitId, label: suggestedUnitLabel }, ...units];
-    }
-    return units;
-  })();
-
-  const isFreeText = value.startsWith("FREE:");
-  const freeText = isFreeText ? value.slice(5) : "";
+  const term = q.trim().toLowerCase();
+  const filtered = term
+    ? units
+        .filter(
+          (u) =>
+            u.full_path.toLowerCase().includes(term) ||
+            u.label.toLowerCase().includes(term),
+        )
+        .slice(0, 8)
+    : [];
 
   return (
     <div className="bg-zinc-950/30 rounded-xl px-4 py-3 mb-4 text-left">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-xs uppercase tracking-wider opacity-80">{label}</span>
-        {suggestedUnitLabel && (
-          <span className="text-xs opacity-70">
-            Sugerido: <strong className="opacity-100">{suggestedUnitLabel}</strong>
-          </span>
+        {suggestedUnitId && !selected && (
+          <button
+            type="button"
+            onClick={() => onChange(suggestedUnitId)}
+            className="text-xs opacity-70 hover:opacity-100 underline"
+          >
+            Usar sugerida
+          </button>
         )}
       </div>
-      <select
-        value={isFreeText ? "__FREE__" : value}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v === "__FREE__") onChange("FREE:");
-          else onChange(v);
-        }}
-        className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm"
-      >
-        <option value="">— Sin asignar —</option>
-        {allOptions.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.label}
-          </option>
-        ))}
-        <option value="__FREE__">✏️ Otra (escribir)</option>
-      </select>
-      {isFreeText && (
-        <input
-          type="text"
-          value={freeText}
-          autoFocus
-          onChange={(e) => onChange(`FREE:${e.target.value}`)}
-          placeholder="Ej: Lote 42, Depto 3B, Local 7"
-          className="w-full mt-2 bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
-        />
+
+      {selected ? (
+        <div className="bg-zinc-950/50 rounded-lg px-3 py-2 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-semibold text-sm">
+              {selected.kind} {selected.label}
+            </div>
+            {selected.breadcrumb && (
+              <div className="text-xs opacity-70 truncate">{selected.breadcrumb}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              setQ("");
+            }}
+            className="text-xs opacity-70 hover:opacity-100 underline flex-shrink-0"
+          >
+            Cambiar
+          </button>
+        </div>
+      ) : (
+        <div className="relative">
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar unidad…"
+            className="w-full bg-zinc-950/50 border border-zinc-950/30 rounded px-3 py-2 text-sm placeholder:opacity-60"
+          />
+          {filtered.length > 0 && (
+            <ul className="absolute z-30 mt-1 w-full bg-zinc-900 border border-zinc-700 rounded-lg divide-y divide-zinc-800 max-h-60 overflow-y-auto shadow-2xl">
+              {filtered.map((u) => (
+                <li key={u.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(u.id);
+                      setQ("");
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-zinc-800 text-white"
+                  >
+                    <div className="text-sm font-semibold">
+                      {u.kind} {u.label}
+                    </div>
+                    {u.breadcrumb && (
+                      <div className="text-xs text-zinc-400 truncate">{u.breadcrumb}</div>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {q && filtered.length === 0 && (
+            <p className="text-xs opacity-70 mt-1">Sin coincidencias.</p>
+          )}
+        </div>
       )}
     </div>
   );

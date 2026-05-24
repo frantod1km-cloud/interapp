@@ -1,76 +1,82 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentOrg, getCurrentMemberRole } from "@/lib/org";
+import { getOrgUnitLevels, getUnitTree, type TreeUnit } from "@/lib/units";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCurrentOrg } from "@/lib/org";
-import {
-  addUnitAction,
-  bulkCreateUnitsAction,
-  removeUnitAction,
-  toggleUnitActiveAction,
-  updateUnitAction,
-} from "./actions";
+import UnitTreeView from "./UnitTreeView";
 
 export const dynamic = "force-dynamic";
-
-const KIND_LABELS: Record<string, string> = {
-  lote: "🏞️ Lote",
-  casa: "🏠 Casa",
-  depto: "🏢 Depto",
-  local: "🏪 Local",
-  oficina: "🏛️ Oficina",
-  otro: "📋 Otro",
-};
 
 export default async function UnidadesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; created?: string; skipped?: string; error?: string; level_saved?: string }>;
 }) {
   const sp = await searchParams;
   const org = (await getCurrentOrg())!;
+  const role = await getCurrentMemberRole(org.id);
+  if (role !== "org_admin") redirect("/admin");
+
+  const levels = await getOrgUnitLevels(org.id);
+
+  // Si la org no configuró los niveles → wizard obligatorio
+  if (levels.length === 0) {
+    redirect("/admin/setup/unidades");
+  }
+
+  const tree = await getUnitTree(org.id);
+
+  // Conteo de residentes con "unit text" legacy (sin unit_id) — los que
+  // tienen un valor en `unit` pero no apuntan a la nueva tabla.
   const admin = createAdminClient();
-
-  let query = admin
-    .from("units")
-    .select("id, label, kind, notes, active, created_at")
+  const { count: legacyCount } = await admin
+    .from("residents")
+    .select("id", { count: "exact", head: true })
     .eq("organization_id", org.id)
-    .order("label");
-
-  if (sp.q && sp.q.trim()) {
-    const term = sp.q.trim();
-    const safe = term.replace(/[%_]/g, (c) => `\\${c}`);
-    query = query.ilike("label", `%${safe}%`);
-  }
-
-  const { data: units } = await query;
-
-  // Conteo de residentes por unit_id (una sola query)
-  const unitIds = (units ?? []).map((u) => u.id);
-  const residentsByUnit = new Map<string, number>();
-  if (unitIds.length > 0) {
-    const { data } = await admin
-      .from("residents")
-      .select("unit_id")
-      .eq("organization_id", org.id)
-      .in("unit_id", unitIds);
-    for (const r of data ?? []) {
-      if (r.unit_id) {
-        residentsByUnit.set(r.unit_id, (residentsByUnit.get(r.unit_id) ?? 0) + 1);
-      }
-    }
-  }
+    .is("unit_id", null)
+    .not("unit", "is", null);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Unidades del barrio</h1>
-      <p className="text-zinc-400 text-sm mb-6">
-        Listado maestro de lotes, casas, departamentos, locales y oficinas. Cuando cargás un
-        residente o el guardia anota un visitante, elige una unidad de esta lista para que
-        siempre quede normalizado el destino.
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+        <h1 className="text-2xl font-bold">Unidades del barrio</h1>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/setup/unidades"
+            className="bg-zinc-800 hover:bg-zinc-700 text-sm px-4 py-2 rounded-lg font-medium"
+          >
+            ⚙️ Niveles
+          </Link>
+          {(legacyCount ?? 0) > 0 && (
+            <Link
+              href="/admin/unidades/migrar"
+              className="bg-amber-600 hover:bg-amber-500 text-sm px-4 py-2 rounded-lg font-medium"
+            >
+              🔄 Migrar {legacyCount} residente(s) legacy
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <p className="text-zinc-400 text-sm mb-4">
+        Jerarquía:{" "}
+        {levels.map((l, i) => (
+          <span key={l}>
+            <span className="font-mono bg-zinc-900 px-2 py-0.5 rounded text-xs">{l}</span>
+            {i < levels.length - 1 && <span className="opacity-50"> → </span>}
+          </span>
+        ))}
       </p>
 
       {sp.saved && (
         <div className="bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 rounded-2xl p-4 mb-4 text-sm">
-          ✅ Cambios guardados.
+          ✅ Cambios guardados{sp.created && ` (${sp.created} unidades creadas)`}
+          {sp.skipped === "all" && " — todas ya existían"}.
+        </div>
+      )}
+      {sp.level_saved && (
+        <div className="bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 rounded-2xl p-4 mb-4 text-sm">
+          ✅ Niveles guardados. Ahora cargá las unidades reales.
         </div>
       )}
       {sp.error && (
@@ -79,194 +85,29 @@ export default async function UnidadesPage({
         </div>
       )}
 
-      {/* Buscador */}
-      <form method="get" className="flex gap-2 mb-4">
-        <input
-          type="text"
-          name="q"
-          defaultValue={sp.q ?? ""}
-          placeholder="Buscar unidad por etiqueta…"
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-sm"
-        />
-        <button className="bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2 text-sm">
-          Buscar
-        </button>
-        {sp.q && (
-          <Link href="/admin/unidades" className="text-sm text-zinc-400 hover:text-white self-center px-3">
-            Limpiar
-          </Link>
-        )}
-      </form>
+      <UnitTreeView tree={tree} levels={levels} />
 
-      {/* Alta individual */}
-      <details className="bg-zinc-900 border border-zinc-800 rounded-2xl mb-3 group">
-        <summary className="cursor-pointer p-4 font-semibold flex items-center justify-between list-none">
-          <span>+ Agregar unidad</span>
-          <span className="text-emerald-400 text-xl transition-transform group-open:rotate-45">+</span>
-        </summary>
-        <form action={addUnitAction} className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-4 gap-3 border-t border-zinc-800">
-          <select name="kind" defaultValue="lote" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
-            {Object.entries(KIND_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
-            ))}
-          </select>
-          <input
-            name="label"
-            required
-            placeholder='Ej: "Lote 42"'
-            className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
-          />
-          <input
-            name="notes"
-            placeholder="Notas (opcional)"
-            className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
-          />
-          <button
-            type="submit"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded px-4 py-2"
-          >
-            Agregar
-          </button>
-        </form>
-      </details>
+      {tree.length === 0 && (
+        <EmptyState rootLevelName={levels[0]} levels={levels} />
+      )}
+    </div>
+  );
+}
 
-      {/* Alta masiva */}
-      <details className="bg-zinc-900 border border-zinc-800 rounded-2xl mb-6 group">
-        <summary className="cursor-pointer p-4 font-semibold flex items-center justify-between list-none">
-          <span>📋 Alta masiva (rango numérico)</span>
-          <span className="text-emerald-400 text-xl transition-transform group-open:rotate-45">+</span>
-        </summary>
-        <form action={bulkCreateUnitsAction} className="p-4 pt-0 space-y-3 border-t border-zinc-800">
-          <p className="text-xs text-zinc-400">
-            Crea de una vez varias unidades con etiquetas numeradas. Ejemplo: prefijo
-            "Lote", desde 1, hasta 200 → crea "Lote 1", "Lote 2"… "Lote 200".
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-            <select name="kind" defaultValue="lote" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800">
-              {Object.entries(KIND_LABELS).map(([id, label]) => (
-                <option key={id} value={id}>{label}</option>
-              ))}
-            </select>
-            <input
-              name="prefix"
-              required
-              placeholder="Prefijo (Lote)"
-              className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
-            />
-            <input
-              type="number"
-              name="from"
-              required
-              defaultValue="1"
-              min="0"
-              className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
-            />
-            <input
-              type="number"
-              name="to"
-              required
-              defaultValue="100"
-              min="1"
-              max="1000"
-              className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800"
-            />
-            <button
-              type="submit"
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded px-4 py-2"
-            >
-              Crear todas
-            </button>
-          </div>
-          <p className="text-xs text-zinc-500">
-            Las etiquetas que ya existan se ignoran. Máximo 1000 a la vez.
-          </p>
-        </form>
-      </details>
-
-      {/* Lista */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-950 text-zinc-400 text-left">
-            <tr>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Etiqueta</th>
-              <th className="px-4 py-3">Residentes</th>
-              <th className="px-4 py-3">Notas</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(units ?? []).map((u) => (
-              <tr key={u.id} className="border-t border-zinc-800 align-top">
-                <td className="px-4 py-3 text-xs whitespace-nowrap">{KIND_LABELS[u.kind] ?? u.kind}</td>
-                <td className="px-4 py-3 font-semibold">{u.label}</td>
-                <td className="px-4 py-3 tabular-nums">{residentsByUnit.get(u.id) ?? 0}</td>
-                <td className="px-4 py-3 text-zinc-400 text-xs max-w-xs">{u.notes ?? "—"}</td>
-                <td className="px-4 py-3">
-                  {u.active ? (
-                    <span className="text-emerald-400 text-xs">Activa</span>
-                  ) : (
-                    <span className="text-zinc-500 text-xs">Inactiva</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex gap-2 justify-end flex-wrap">
-                    <details>
-                      <summary className="cursor-pointer text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 list-none">
-                        Editar
-                      </summary>
-                      <form action={updateUnitAction} className="absolute z-10 mt-2 bg-zinc-950 border border-zinc-800 rounded-lg p-3 space-y-2 right-0 w-72">
-                        <input type="hidden" name="unit_id" value={u.id} />
-                        <select name="kind" defaultValue={u.kind} className="w-full bg-zinc-900 rounded px-3 py-2 border border-zinc-800 text-sm">
-                          {Object.entries(KIND_LABELS).map(([id, label]) => (
-                            <option key={id} value={id}>{label}</option>
-                          ))}
-                        </select>
-                        <input
-                          name="label"
-                          defaultValue={u.label}
-                          required
-                          className="w-full bg-zinc-900 rounded px-3 py-2 border border-zinc-800 text-sm"
-                        />
-                        <input
-                          name="notes"
-                          defaultValue={u.notes ?? ""}
-                          placeholder="Notas"
-                          className="w-full bg-zinc-900 rounded px-3 py-2 border border-zinc-800 text-sm"
-                        />
-                        <button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded px-3 py-1.5">
-                          Guardar
-                        </button>
-                      </form>
-                    </details>
-                    <form action={toggleUnitActiveAction}>
-                      <input type="hidden" name="unit_id" value={u.id} />
-                      <input type="hidden" name="active" value={u.active ? "false" : "true"} />
-                      <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700">
-                        {u.active ? "Desactivar" : "Reactivar"}
-                      </button>
-                    </form>
-                    <form action={removeUnitAction}>
-                      <input type="hidden" name="unit_id" value={u.id} />
-                      <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-700">
-                        Eliminar
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {(!units || units.length === 0) && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
-                  {sp.q ? "Sin resultados." : "Aún no cargaste unidades. Usá 'Alta masiva' para crear de un solo paso (ej. Lote 1 a Lote 200)."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+function EmptyState({ rootLevelName, levels }: { rootLevelName: string; levels: string[] }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+      <div className="text-5xl mb-3">🌳</div>
+      <h2 className="text-xl font-bold mb-2">Empezá a cargar tu árbol</h2>
+      <p className="text-zinc-400 text-sm mb-4 max-w-md mx-auto">
+        Tu jerarquía es <strong>{levels.join(" → ")}</strong>. Primero cargá los nodos
+        de nivel <strong>{rootLevelName}</strong>. Después podés meterte adentro de cada
+        uno para cargar los siguientes niveles, o usar &quot;Alta masiva&quot; para crear
+        muchos de una.
+      </p>
+      <p className="text-xs text-zinc-500">
+        Usá los botones que aparecen debajo de cada nodo para agregar sus hijos.
+      </p>
     </div>
   );
 }

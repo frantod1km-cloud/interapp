@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { getUnitLeaves } from "@/lib/units";
 import { formatDni } from "@/lib/dni/parse";
 import { RESIDENT_KINDS } from "@/lib/resident-kinds";
 import { addResidentAction, toggleResidentActiveAction } from "./actions";
@@ -45,13 +46,8 @@ export default async function ResidentsPage({
 
   const { data: residents } = await query;
 
-  // Lista de unidades activas del barrio para el picker de alta
-  const { data: units } = await admin
-    .from("units")
-    .select("id, label, kind")
-    .eq("organization_id", org.id)
-    .eq("active", true)
-    .order("label");
+  // Hojas del árbol de unidades (con breadcrumb) para el picker jerárquico.
+  const leaves = await getUnitLeaves(org.id);
 
   const emailsMap = new Map<string, string>();
   for (const r of residents ?? []) {
@@ -163,7 +159,7 @@ export default async function ResidentsPage({
           <input name="first_name" placeholder="Nombre" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
           <input name="last_name" placeholder="Apellido" required className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
           <input name="phone" placeholder="Teléfono" className="bg-zinc-950 rounded px-3 py-2 border border-zinc-800" />
-          <UnitPicker units={units ?? []} />
+          <UnitPicker leaves={leaves} />
         </div>
         <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold rounded px-4 py-2">
           Agregar
@@ -234,7 +230,7 @@ export default async function ResidentsPage({
                           phone: r.phone,
                           kind: r.kind,
                         }}
-                        units={units ?? []}
+                        leaves={leaves}
                       />
                       <form action={toggleResidentActiveAction}>
                         <input type="hidden" name="resident_id" value={r.id} />

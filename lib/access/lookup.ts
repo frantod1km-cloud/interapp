@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { dniSearchForms } from "@/lib/dni/parse";
+import { getUnitBreadcrumb } from "@/lib/units";
 import { describeRule, isWithinAccessWindow, type AccessRule } from "./rules";
 
 export type VehicleHint = {
@@ -221,12 +222,18 @@ export async function lookupDni(
       };
     }
 
+    // Si tiene unit_id (vive en una hoja del árbol), traemos el breadcrumb
+    // para mostrar la ubicación completa ("Sector Norte · Etapa 2 · Lote 42").
+    // Si solo tiene texto legacy, usamos eso.
+    const breadcrumb = resident.unit_id ? await getUnitBreadcrumb(resident.unit_id) : null;
+    const detail = breadcrumb ?? resident.unit ?? "Acceso permanente";
+
     return {
       state: "authorized",
       kind: "resident",
       dni,
       fullName,
-      detail: resident.unit ? resident.unit : "Acceso permanente",
+      detail,
       residentId: resident.id,
       vehicles: vehicles ?? [],
       residentKind: resident.kind,
@@ -234,7 +241,7 @@ export async function lookupDni(
       reservations,
       lastEvent,
       unitId: resident.unit_id ?? null,
-      unitLabel: resident.unit ?? null,
+      unitLabel: breadcrumb ?? resident.unit ?? null,
     };
   }
 
@@ -267,19 +274,23 @@ export async function lookupDni(
       .limit(1)
       .maybeSingle();
 
+    // Breadcrumb del anfitrión para mostrar a dónde va el visitante.
+    const hostBreadcrumb = hostUnitId ? await getUnitBreadcrumb(hostUnitId) : null;
+    const hostDetail = hostBreadcrumb ?? hostUnitLabel ?? null;
+
     return {
       state: "authorized",
       kind: "authorization",
       dni,
       fullName: valid.visitor_name ?? "Visitante",
-      detail: `Invitado de ${host}`,
+      detail: hostDetail ? `Invitado de ${host} · ${hostDetail}` : `Invitado de ${host}`,
       residentId: valid.resident_id,
       authorizationId: valid.id,
       lastEvent: lastEv
         ? { occurred_at: lastEv.occurred_at, direction: lastEv.direction as "in" | "out", result: lastEv.result }
         : null,
       unitId: hostUnitId,
-      unitLabel: hostUnitLabel,
+      unitLabel: hostBreadcrumb ?? hostUnitLabel,
     };
   }
 
