@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { normalizeDni } from "@/lib/dni/parse";
 
@@ -78,17 +79,46 @@ export async function createInviteAction(formData: FormData) {
   redirect(`/resident/invite/${data.id}`);
 }
 
+// Elimina o revoca una autorización del residente que la creó.
+//
+// Si el invitado todavía NO la usó (no hay claimed_at) → DELETE entero,
+// porque no tiene valor histórico una invitación que nunca disparó nada.
+// Si el invitado ya la usó (claimed_at, posiblemente además ya ingresó)
+// → UPDATE revoked=true para preservar el historial pero anularla.
+//
+// Usa el admin client para evitar la RLS que solo dejaba al org_admin
+// modificar autorizaciones. Validamos manualmente que el auth pertenezca
+// al residente que llama, así no se pueden borrar las de otro.
 export async function revokeAuthAction(formData: FormData) {
-  const { orgId } = await currentResidentId();
+  const { orgId, residentId } = await currentResidentId();
   const authId = String(formData.get("auth_id") ?? "");
   if (!authId) return;
 
-  const supabase = await createClient();
-  await supabase
+  const admin = createAdminClient();
+
+  // Verificar ownership antes de mutar
+  const { data: auth } = await admin
     .from("authorizations")
-    .update({ revoked: true })
+    .select("id, resident_id, claimed_at, invite_token")
     .eq("id", authId)
-    .eq("organization_id", orgId);
+    .eq("organization_id", orgId)
+    .maybeSingle();
+  if (!auth || auth.resident_id !== residentId) {
+    // No tiramos error para no dar pistas de "existe pero no es tuya"
+    revalidatePath("/resident");
+    return;
+  }
+
+  if (!auth.claimed_at) {
+    // Nunca se usó → borrado físico
+    await admin.from("authorizations").delete().eq("id", authId);
+  } else {
+    // Ya se usó → revocación lógica
+    await admin
+      .from("authorizations")
+      .update({ revoked: true })
+      .eq("id", authId);
+  }
 
   revalidatePath("/resident");
 }

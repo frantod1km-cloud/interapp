@@ -120,10 +120,19 @@ export default async function ResidentHome() {
                     </Link>
                   )}
                 </div>
-                <form action={revokeAuthAction}>
+                <form
+                  action={revokeAuthAction}
+                  onSubmit={(e) => {
+                    const isUnused = !a.claimed_at;
+                    const msg = isUnused
+                      ? "¿Eliminar este link de invitación? No se va a poder usar más."
+                      : "¿Revocar esta autorización? El invitado no va a poder entrar más.";
+                    if (!confirm(msg)) e.preventDefault();
+                  }}
+                >
                   <input type="hidden" name="auth_id" value={a.id} />
-                  <button className="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-rose-700">
-                    Revocar
+                  <button className="text-xs px-3 py-1 rounded bg-rose-900/40 hover:bg-rose-700 text-rose-200 hover:text-white border border-rose-900/50">
+                    {a.claimed_at ? "Revocar" : "Eliminar"}
                   </button>
                 </form>
               </div>
