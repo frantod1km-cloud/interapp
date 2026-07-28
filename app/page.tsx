@@ -57,6 +57,13 @@ export default async function Home() {
     );
   }
 
-  // --- No hay subdominio: landing pública de interapp ---
+  // --- No hay subdominio: si estás logueado como super admin te llevo
+  //     directo al panel. Si no, landing pública. ---
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isSuper =
+    (user?.user_metadata as { is_super?: boolean } | null)?.is_super === true;
+  if (isSuper) redirect("/super");
+
   return <Landing />;
 }
