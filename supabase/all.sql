@@ -1498,11 +1498,13 @@ using (
 create table platform_config (
   id                    text primary key,
   announcement          text,
-  announcement_level    text default 'info' check (announcement_level in ('info','warning','danger')),
+  announcement_level    text not null default 'info',
   signup_open           boolean not null default true,
   maintenance           boolean not null default false,
   updated_at            timestamptz not null default now(),
-  updated_by            uuid references auth.users(id) on delete set null
+  updated_by            uuid references auth.users(id) on delete set null,
+  constraint platform_config_announcement_level_valid
+    check (announcement_level in ('info','warning','danger'))
 );
 
 alter table platform_config enable row level security;
